@@ -1,0 +1,137 @@
+
+
+<!-- Variables:
+
+nHilos = 100 // cantidad de hilos
+GROSOR = 4 // px por hilo
+ALTO = 100 // px alto total 
+nColores = 2 // cant colores q alternan
+nMin  = 2 // minimo rango de pasos secuencia
+nMax  =  13 // max rango de pasos secuencia
+MARGEN = 30 
+PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
+FONDO = '#efe6d2';
+ TEXTO = '#585050';
+SECUENCIAHILOS = []
+Indice = 0
+
+
+
+Algoritmo:
+
+- Euclides (k, n) :
+		Devuelve un array de n posiciones, con la distribucion euclidiana de 1s y 0s para k
+- NuevaReceta () :
+		COLORES[] = elegir aleatoriamente nColores cant de items dentro de la lista PALETA
+		n = elegir aleatoriamente el valor de n entre nMin y nMax
+		k = elegir aleatoriamente el valor de k entre 1 y ( n - 1  )
+		SECUENCIAEUCLIDES = obtener secuencia Euclides(k,n)
+		colorActual = -1            // el primer 1 lo lleva a 0
+
+- Dibujar(secuencia):
+		Pintar FONDO en todo el canvas
+		Para cada Item de secuencia:
+			dibujar un rectángulo de GROSOR px de ancho y ALTO px de alto
+			en x = MARGEN + Indice del Item * GROSOR, y = MARGEN
+			con color = valor del Item
+		Debajo, dejando MARGEN px, escribir (k, n) como referencia
+
+	
+Bucle:
+	// pasar de 1000101000 a 1000 => color uno 10 => color 2, es decir: 
+	Indice = 0 
+	Mientras Indice < nHilos
+		si SECUENCIAEUCLIDES[ Indice % n ] == 1 
+			 =>	colorActual =  (colorActual + 1) % nColores
+		SECUENCIAHILOS[Indice] = COLORES[colorActual]
+		Indice +1 , hasta que Indice == nHilos
+	Cuando Indice == nHilos hilos, salir del bucle, y Dibujar(SECUENCIAHILOS) -->
+
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Telar euclidiano</title>
+  <style>
+    html, body { margin: 0; padding: 0; background: #efe6d2; }
+    canvas { display: block; }
+  </style>
+  <script src="p5.min.js"></script>
+</head>
+<body>
+<script>
+// ---------- VARIABLES ----------
+const nHilos = 100;    // cantidad de hilos
+const GROSOR = 4;      // px por hilo
+const ALTO = 100;      // px alto total
+const nColores = 2;    // cant colores que alternan
+const nMin = 2;        // mínimo rango de pasos secuencia
+const nMax = 13;       // máximo rango de pasos secuencia
+const MARGEN = 30;
+const PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
+const FONDO = '#efe6d2';
+const TEXTO = '#585050';
+let SECUENCIAHILOS = [];
+let Indice = 0;
+
+let COLORES, SECUENCIAEUCLIDES, n, k, colorActual;
+
+// ---------- ALGORITMO ----------
+
+// array de n posiciones con distribución euclidiana de 1s y 0s para k
+function Euclides(k, n) {
+  let a = Array.from({ length: k }, () => [1]);
+  let b = Array.from({ length: n - k }, () => [0]);
+  while (b.length > 1) {
+    const m = min(a.length, b.length);
+    const unidos = [];
+    for (let i = 0; i < m; i++) unidos.push(a[i].concat(b[i]));
+    b = a.length > m ? a.slice(m) : b.slice(m);
+    a = unidos;
+  }
+  return a.concat(b).flat();
+}
+
+function NuevaReceta() {
+  COLORES = shuffle(PALETA).slice(0, nColores);
+  n = floor(random(nMin, nMax + 1));
+  k = floor(random(1, n));                 // 1 a n - 1
+  SECUENCIAEUCLIDES = Euclides(k, n);
+  colorActual = -1;                        // el primer 1 lo lleva a 0
+}
+
+function Dibujar(secuencia) {
+  background(FONDO);
+  noStroke();
+  for (let i = 0; i < secuencia.length; i++) {
+    fill(secuencia[i]);
+    rect(MARGEN + i * GROSOR, MARGEN, GROSOR, ALTO);
+  }
+  fill(TEXTO);
+  textSize(11);
+  text(`(${k}, ${n})`, MARGEN, MARGEN + ALTO + MARGEN);
+}
+
+// pasar de 1000101000 a 1000 => color 1, 10 => color 2 ...
+function Bucle() {
+  Indice = 0;
+  while (Indice < nHilos) {
+    if (SECUENCIAEUCLIDES[Indice % n] === 1) colorActual = (colorActual + 1) % nColores;
+    SECUENCIAHILOS[Indice] = COLORES[colorActual];
+    Indice++;
+  }
+  Dibujar(SECUENCIAHILOS);
+}
+
+// ---------- p5 ----------
+function setup() {
+  createCanvas(nHilos * GROSOR + MARGEN * 2, ALTO + MARGEN * 3);
+  textFont('monospace');
+  noLoop();
+  NuevaReceta();
+  Bucle();
+}
+</script>
+</body>
+</html>
