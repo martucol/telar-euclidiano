@@ -102,6 +102,7 @@
     <label>cant. colores <input id="aColores" type="number" min="2" max="4" value="3"></label>
     <label>n mín <input id="aMin" type="number" min="2" value="2"></label>
     <label>n máx <input id="aMax" type="number" min="2" value="29"></label>
+    <label>acento <input id="aAcento" type="checkbox"></label>
     <!-- <label>modo
       <select id="aModo">
         <option value="aleatorio">aleatorio</option>
@@ -115,11 +116,12 @@
 
   <section id="sCustom" hidden>
     <h2>Custom</h2>
-    <label>k <input id="eK" type="number" min="1" value="1"></label>
-    <label>n <input id="eN" type="number" min="2" value="31"></label>
+    <label>n (total pasos) <input id="eN" type="number" min="2" value="31"></label>
+    <label>k (cambios de color)<input id="eK" type="number" min="1" value="1"></label>
+    <label>a (acento) <input id="eA" type="number" min="0" value="0"></label>
     <label>cant. colores <input id="eColores" type="number" min="2" max="4" value="4"></label>
     <button id="bExacto">Generar</button>
-    <small>mismo E(k,n) en urdimbre y trama</small>
+    <small>mismo E(k,n) en urdimbre y trama · acento 0 = sin acento</small>
   </section>
 
   <section>
@@ -148,6 +150,7 @@ const CONFIG = {
   nMin: 2,             // rango de n
   nMax: 29,
   modo: 'aleatorio',   // 'igual' | 'distinto' | 'aleatorio'
+  acento: false,       // aleatorio: sortea a entre 1 y k - 1
   tiempoHilo: 10,     // ms que tarda cada hilo en crecer
   margen: 30,          // margen interno de la leyenda
 };
@@ -184,7 +187,9 @@ function mcm(a, b) {
 }
 
 // hilos hasta que el color vuelve al inicio
+// con acento solo alternan los 2 colores base, que avanzan k - a por vuelta
 function periodo(S) {
+  if (S.a) return S.n * 2 / mcd(S.k - S.a, 2);
   return S.n * CONFIG.nColores / mcd(S.k, CONFIG.nColores);
 }
 
@@ -192,16 +197,47 @@ function periodo(S) {
 function Patron() {
   const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
   const k = floor(random(1, n));            // 1 a n - 1
-  return { k, n, secuencia: Euclides(k, n) };
+  const a = CONFIG.acento && k > 1 ? floor(random(1, k)) : 0;   // 1 a k - 1, sin acento si k = 1
+  return { k, n, a, secuencia: Acento(Euclides(k, n), k, a) };
 }
 
 // 1000101000 → 1000 color 1 · 10 color 2 ...
 function ColoresHilos(p, total) {
+  if (p.a) return ColoresHilosAcento(p, total);
   const hilos = [];
   let colorActual = -1;                     // el primer 1 lo lleva a 0
   let Indice = 0;
   while (Indice < total) {
     if (p.secuencia[Indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
+    hilos[Indice] = colores[colorActual];
+    Indice++;
+  }
+  return hilos;
+}
+
+// ---------- ACENTO ----------
+// principal E(k,n), acento E(a,k): el acento se reparte sobre los k unos
+// E(5,8) = 10110110 · E(2,5) = 10100 → 20120110
+// a = 0: sin acento, la secuencia queda igual
+function Acento(secuencia, k, a) {
+  if (!a) return secuencia;
+  const acento = Euclides(a, k);
+  let uno = 0;                              // cuántos 1 van recorridos
+  return secuencia.map(x => x === 1 ? (acento[uno++] ? 2 : 1) : 0);
+}
+
+// con acento: 2 colores para la base y 1 extra para los 2
+// cada 1 alterna entre los 2 colores base · cada 2 pinta el color acento
+// los 0 mantienen el último color
+function ColoresHilosAcento(p, total) {
+  const hilos = [];
+  let colorActual = -1;
+  let colorBase = -1;
+  let Indice = 0;
+  while (Indice < total) {
+    const x = p.secuencia[Indice % p.n];
+    if (x === 1) colorActual = colorBase = (colorBase + 1) % 2;
+    if (x === 2) colorActual = 2;
     hilos[Indice] = colores[colorActual];
     Indice++;
   }
@@ -217,9 +253,9 @@ function NuevaReceta() {
 }
 
 // k y n dados por el usuario, mismo patrón en urdimbre y trama
-function RecetaExacta(k, n) {
+function RecetaExacta(k, n, a) {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  const p = { k, n, secuencia: Euclides(k, n) };
+  const p = { k, n, a, secuencia: Acento(Euclides(k, n), k, a) };
   comparten = true;
   Tejer(p, p);
 }
@@ -308,12 +344,12 @@ function dibujarTrama(j, progreso) {
 // período completo: casilla = color, punto = 1, línea = reinicio de secuencia
 function leyenda(nombre, S, x, y) {
   const largo = min(periodo(S), S.hilos.length);
-  const x0 = x + 130;
+  const x0 = x + 190;
   const s = min(14, (width - x0 - CONFIG.margen) / largo - 2);
 
   fill(TEXTO);
   textSize(11);
-  text(`${nombre} E(${S.k},${S.n})`, x, y + 10);
+  text(`${nombre} E(${S.k},${S.n})` + (S.a ? ` E(${S.a},${S.k})` : ''), x, y + 10);
 
   for (let i = 0; i < largo; i++) {
     const cx = x0 + i * (s + 2);
@@ -384,7 +420,9 @@ function LeerGrosor() {
 
 function GenerarAleatorio() {
   LeerGrosor();
-  CONFIG.nColores = constrain(valor('aColores') || 2, 2, PALETA.length);
+  CONFIG.acento = document.getElementById('aAcento').checked;
+  // con acento: 2 colores base + 1 acento, cant. colores no se usa
+  CONFIG.nColores = CONFIG.acento ? 3 : constrain(valor('aColores') || 2, 2, PALETA.length);
   CONFIG.nMin = max(2, valor('aMin') || 2);
   CONFIG.nMax = max(CONFIG.nMin, valor('aMax') || CONFIG.nMin);
   CONFIG.modo = 'igual' //document.getElementById('aModo').value;
@@ -397,8 +435,10 @@ function GenerarExacto() {
   const k = constrain(valor('eK') || 1, 1, n - 1);   // 1 a n - 1
   document.getElementById('eN').value = n;
   document.getElementById('eK').value = k;
-  CONFIG.nColores = constrain(valor('eColores') || 2, 2, PALETA.length);
-  RecetaExacta(k, n);
+  const a = constrain(valor('eA') || 0, 0, k - 1);   // 0 = sin acento
+  document.getElementById('eA').value = a;
+  CONFIG.nColores = a ? 3 : constrain(valor('eColores') || 2, 2, PALETA.length);
+  RecetaExacta(k, n, a);
 }
 
 // activa un botón del toggle y muestra solo la sección de ese modo
@@ -413,7 +453,7 @@ document.querySelectorAll('#modo button').forEach(b => b.onclick = () => Mostrar
 document.getElementById('grosor').onchange = () => { LeerGrosor(); Tejer(urdimbre, trama); };
 document.getElementById('bAleatorio').onclick = GenerarAleatorio;
 document.getElementById('bExacto').onclick = GenerarExacto;
-document.getElementById('bTile').onclick = GuardarTile;
+// document.getElementById('bTile').onclick = GuardarTile;
 document.getElementById('bCompleto').onclick = GuardarCompleto;
 
 function keyPressed() {
@@ -421,7 +461,7 @@ function keyPressed() {
   const k = key.toLowerCase();
   if (k === 'r') GenerarAleatorio();
   if (k === 'g') GuardarCompleto();
-  if (k === 't') GuardarTile();
+  // if (k === 't') GuardarTile();
 }
 </script>
 </body>
