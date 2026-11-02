@@ -65,14 +65,14 @@
   <h1>Telar euclidiano</h1>
 
   <section>
-    <label>grosor (px) <input id="grosor" type="number" min="1" value="8"></label>
+    <label>grosor (px) <input id="grosor" type="number" min="1" value="16"></label>
   </section>
 
   <section>
     <h2>Aleatorio</h2>
     <label>colores <input id="aColores" type="number" min="2" max="4" value="3"></label>
     <label>n mín <input id="aMin" type="number" min="2" value="2"></label>
-    <label>n máx <input id="aMax" type="number" min="2" value="45"></label>
+    <label>n máx <input id="aMax" type="number" min="2" value="29"></label>
     <label>modo
       <select id="aModo">
         <option value="aleatorio">aleatorio</option>
@@ -85,7 +85,7 @@
   </section>
 
   <section>
-    <h2>Exacto</h2>
+    <h2>Custom</h2>
     <label>k <input id="eK" type="number" min="1" value="1"></label>
     <label>n <input id="eN" type="number" min="2" value="31"></label>
     <label>colores <input id="eColores" type="number" min="2" max="4" value="4"></label>
@@ -114,10 +114,10 @@
 // =====================================================
 
 const CONFIG = {
-  grosor: 4,           // px por hilo · la cantidad de hilos sale del tamaño de pantalla
+  grosor: 16,           // px por hilo · la cantidad de hilos sale del tamaño de pantalla
   nColores: 3,         // colores que alternan
   nMin: 2,             // rango de n
-  nMax: 13,
+  nMax: 29,
   modo: 'aleatorio',   // 'igual' | 'distinto' | 'aleatorio'
   tiempoHilo: 10,     // ms que tarda cada hilo en crecer
   margen: 30,          // margen interno de la leyenda
