@@ -6,12 +6,14 @@
   <title>Telar euclidiano</title>
   <style>
     body {
+      --foreground: #585050;
+      --background: #efe6d2;
       margin: 0;
       display: flex;
       min-height: 100vh;
-      background: #efe6d2;
+      background: var(--background);
       color: #b1d1f5;
-      color: #585050;
+      color: var(--foreground);
       font: 12px monospace;
     }
     canvas { display: block; }
@@ -20,7 +22,7 @@
       width: 220px;
       flex-shrink: 0;
       padding: 30px 24px;
-      border-right: 1px solid #585050;
+      border-right: 1px solid var(--foreground);
     }
     #lienzo { flex: 1; overflow: hidden; }
 
@@ -40,7 +42,7 @@
       color: inherit;
       background: transparent;
       border: none;
-      border-bottom: 1px solid #585050;
+      border-bottom: 1px solid var(--foreground);
     }
     button {
       display: block;
@@ -50,16 +52,35 @@
       font: inherit;
       color: inherit;
       background: transparent;
-      border: 1px solid #585050;
+      border: 1px solid var(--foreground);
       text-transform: uppercase;
       cursor: pointer;
     }
-    button:hover { background: #585050; color: #efe6d2; }
-    #modo { display: flex; }
-    #modo button { flex: 1; opacity: 0.6; }
-    #modo button + button { border-left: none; }
-    #modo button.activo { opacity: 1; background: #585050; color: #efe6d2; }
-    small { display: block; margin-top: 6px; opacity: 0.7; }
+    button:hover { 
+      background: var(--foreground); 
+      color: var(--background); 
+    }
+    #modo { 
+      display: flex; 
+      margin-bottom: 16px;
+    }
+    #modo button { 
+      flex: 1; 
+      opacity: 0.6; 
+    }
+    #modo button + button {
+      border-left: none; 
+    }
+    #modo button.activo { 
+      opacity: 1; 
+      background: var(--foreground); 
+      color: var(--background); 
+    }
+    small { 
+      display: block; 
+      margin-top: 6px; 
+      opacity: 0.7; 
+    }
   </style>
   <script src="p5.min.js"></script>
 </head>
@@ -70,12 +91,12 @@
 
   <section>
     <label>grosor (px) <input id="grosor" type="number" min="1" value="16"></label>
-    <div id="modo">
+
+  </section>
+  <div id="modo">
       <button data-modo="aleatorio" class="activo">Aleatorio</button>
       <button data-modo="custom">Custom</button>
     </div>
-  </section>
-
   <section id="sAleatorio">
     <h2>Aleatorio</h2>
     <label>cant. colores <input id="aColores" type="number" min="2" max="4" value="3"></label>
