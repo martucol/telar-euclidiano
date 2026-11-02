@@ -55,6 +55,10 @@
       cursor: pointer;
     }
     button:hover { background: #585050; color: #efe6d2; }
+    #modo { display: flex; }
+    #modo button { flex: 1; opacity: 0.6; }
+    #modo button + button { border-left: none; }
+    #modo button.activo { opacity: 1; background: #585050; color: #efe6d2; }
     small { display: block; margin-top: 6px; opacity: 0.7; }
   </style>
   <script src="p5.min.js"></script>
@@ -66,11 +70,15 @@
 
   <section>
     <label>grosor (px) <input id="grosor" type="number" min="1" value="16"></label>
+    <div id="modo">
+      <button data-modo="aleatorio" class="activo">Aleatorio</button>
+      <button data-modo="custom">Custom</button>
+    </div>
   </section>
 
-  <section>
+  <section id="sAleatorio">
     <h2>Aleatorio</h2>
-    <label>colores <input id="aColores" type="number" min="2" max="4" value="3"></label>
+    <label>cant. colores <input id="aColores" type="number" min="2" max="4" value="3"></label>
     <label>n mín <input id="aMin" type="number" min="2" value="2"></label>
     <label>n máx <input id="aMax" type="number" min="2" value="29"></label>
     <label>modo
@@ -84,11 +92,11 @@
     <small>tecla R</small>
   </section>
 
-  <section>
+  <section id="sCustom" hidden>
     <h2>Custom</h2>
     <label>k <input id="eK" type="number" min="1" value="1"></label>
     <label>n <input id="eN" type="number" min="2" value="31"></label>
-    <label>colores <input id="eColores" type="number" min="2" max="4" value="4"></label>
+    <label>cant. colores <input id="eColores" type="number" min="2" max="4" value="4"></label>
     <button id="bExacto">Generar</button>
     <small>mismo E(k,n) en urdimbre y trama</small>
   </section>
@@ -372,6 +380,14 @@ function GenerarExacto() {
   RecetaExacta(k, n);
 }
 
+// activa un botón del toggle y muestra solo la sección de ese modo
+function MostrarSeccion(m) {
+  document.querySelectorAll('#modo button').forEach(b => b.classList.toggle('activo', b.dataset.modo === m));
+  document.getElementById('sAleatorio').hidden = m !== 'aleatorio';
+  document.getElementById('sCustom').hidden = m !== 'custom';
+}
+
+document.querySelectorAll('#modo button').forEach(b => b.onclick = () => MostrarSeccion(b.dataset.modo));
 // cambiar el grosor vuelve a tejer la misma receta
 document.getElementById('grosor').onchange = () => { LeerGrosor(); Tejer(urdimbre, trama); };
 document.getElementById('bAleatorio').onclick = GenerarAleatorio;
