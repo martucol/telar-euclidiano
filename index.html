@@ -102,13 +102,13 @@
     <label>cant. colores <input id="aColores" type="number" min="2" max="4" value="3"></label>
     <label>n mín <input id="aMin" type="number" min="2" value="2"></label>
     <label>n máx <input id="aMax" type="number" min="2" value="29"></label>
-    <label>modo
+    <!-- <label>modo
       <select id="aModo">
         <option value="aleatorio">aleatorio</option>
         <option value="igual">igual</option>
         <option value="distinto">distinto</option>
       </select>
-    </label>
+    </label> -->
     <button id="bAleatorio">Generar</button>
     <small>tecla R</small>
   </section>
@@ -387,7 +387,7 @@ function GenerarAleatorio() {
   CONFIG.nColores = constrain(valor('aColores') || 2, 2, PALETA.length);
   CONFIG.nMin = max(2, valor('aMin') || 2);
   CONFIG.nMax = max(CONFIG.nMin, valor('aMax') || CONFIG.nMin);
-  CONFIG.modo = document.getElementById('aModo').value;
+  CONFIG.modo = 'igual' //document.getElementById('aModo').value;
   NuevaReceta();
 }
 
