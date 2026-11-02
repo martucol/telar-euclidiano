@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telar euclidiano</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      min-height: 100vh;
+      background: #efe6d2;
+      color: #b1d1f5;
+      color: #585050;
+      font: 12px monospace;
+    }
+    canvas { display: block; }
+
+    #panel {
+      width: 220px;
+      flex-shrink: 0;
+      padding: 30px 24px;
+      border-right: 1px solid #585050;
+    }
+    #lienzo { flex: 1; overflow: hidden; }
+
+    h1 { font-size: 13px; font-weight: normal; margin: 0 0 30px; text-transform: uppercase; }
+    h2 { font-size: 11px; font-weight: normal; margin: 0 0 12px; text-transform: uppercase; }
+    section { margin-bottom: 34px; }
+
+    label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    input, select {
+      width: 80px;
+      font: inherit;
+      color: inherit;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid #585050;
+    }
+    button {
+      display: block;
+      width: 100%;
+      margin-top: 14px;
+      padding: 7px 0;
+      font: inherit;
+      color: inherit;
+      background: transparent;
+      border: 1px solid #585050;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    button:hover { background: #585050; color: #efe6d2; }
+    small { display: block; margin-top: 6px; opacity: 0.7; }
+  </style>
+  <script src="p5.min.js"></script>
+</head>
+<body>
+
+<aside id="panel">
+  <h1>Telar euclidiano</h1>
+
+  <section>
+    <label>grosor (px) <input id="grosor" type="number" min="1" value="8"></label>
+  </section>
+
+  <section>
+    <h2>Aleatorio</h2>
+    <label>colores <input id="aColores" type="number" min="2" max="4" value="3"></label>
+    <label>n mín <input id="aMin" type="number" min="2" value="2"></label>
+    <label>n máx <input id="aMax" type="number" min="2" value="45"></label>
+    <label>modo
+      <select id="aModo">
+        <option value="aleatorio">aleatorio</option>
+        <option value="igual">igual</option>
+        <option value="distinto">distinto</option>
+      </select>
+    </label>
+    <button id="bAleatorio">Generar</button>
+    <small>tecla R</small>
+  </section>
+
+  <section>
+    <h2>Exacto</h2>
+    <label>k <input id="eK" type="number" min="1" value="1"></label>
+    <label>n <input id="eN" type="number" min="2" value="31"></label>
+    <label>colores <input id="eColores" type="number" min="2" max="4" value="4"></label>
+    <button id="bExacto">Generar</button>
+    <small>mismo E(k,n) en urdimbre y trama</small>
+  </section>
+
+  <section>
+    <!-- <h2>Guardar</h2> -->
+    <!-- <button id="bTile">Guardar tile</button> -->
+    <button id="bCompleto">Guardar</button>
+    <!-- <small>teclas T · G</small> -->
+  </section>
+</aside>
+
+<main id="lienzo"></main>
+
+<script>
+// =====================================================
+// TELAR EUCLIDIANO (p5.js)
+// cada 1 = color siguiente · los 0 siguen el color de ese 1
+// urdimbre y trama con patrón propio, compartido o al azar
+// animación: urdimbres crecen de arriba hacia abajo,
+// después tramas crecen de derecha a izquierda en tafetán
+// Teclas: R nueva receta · G guardar png · T guardar tile repetible
+// =====================================================
+
+const CONFIG = {
+  grosor: 4,           // px por hilo · la cantidad de hilos sale del tamaño de pantalla
+  nColores: 3,         // colores que alternan
+  nMin: 2,             // rango de n
+  nMax: 13,
+  modo: 'aleatorio',   // 'igual' | 'distinto' | 'aleatorio'
+  tiempoHilo: 10,     // ms que tarda cada hilo en crecer
+  margen: 30,          // margen interno de la leyenda
+};
+
+const PALETA = ['#b1d1f5', '#efa5e4', '#d8f707', '#8a5a2b'];
+const FONDO = '#efe6d2';
+const TEXTO = '#585050';
+const ALTO_LEYENDA = 100;   // banda blanca abajo, encima del tejido
+
+let colores, urdimbre, trama, comparten;
+let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'fin'
+
+// ---------- EUCLIDES ----------
+function Euclides(k, n) {
+  let a = Array.from({ length: k }, () => [1]);
+  let b = Array.from({ length: n - k }, () => [0]);
+  while (b.length > 1) {
+    const m = min(a.length, b.length);
+    const unidos = [];
+    for (let i = 0; i < m; i++) unidos.push(a[i].concat(b[i]));
+    b = a.length > m ? a.slice(m) : b.slice(m);
+    a = unidos;
+  }
+  return a.concat(b).flat();
+}
+
+function mcd(a, b) {
+  while (b) [a, b] = [b, a % b];
+  return a;
+}
+
+function mcm(a, b) {
+  return a * b / mcd(a, b);
+}
+
+// hilos hasta que el color vuelve al inicio
+function periodo(S) {
+  return S.n * CONFIG.nColores / mcd(S.k, CONFIG.nColores);
+}
+
+// ---------- RECETA ----------
+function Patron() {
+  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
+  const k = floor(random(1, n));            // 1 a n - 1
+  return { k, n, secuencia: Euclides(k, n) };
+}
+
+// 1000101000 → 1000 color 1 · 10 color 2 ...
+function ColoresHilos(p, total) {
+  const hilos = [];
+  let colorActual = -1;                     // el primer 1 lo lleva a 0
+  let Indice = 0;
+  while (Indice < total) {
+    if (p.secuencia[Indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
+    hilos[Indice] = colores[colorActual];
+    Indice++;
+  }
+  return hilos;
+}
+
+function NuevaReceta() {
+  colores = shuffle(PALETA).slice(0, CONFIG.nColores);
+  const pU = Patron();
+  comparten = CONFIG.modo === 'igual' || (CONFIG.modo === 'aleatorio' && random() < 0.5);
+  const pT = comparten ? pU : Patron();
+  Tejer(pU, pT);
+}
+
+// k y n dados por el usuario, mismo patrón en urdimbre y trama
+function RecetaExacta(k, n) {
+  colores = shuffle(PALETA).slice(0, CONFIG.nColores);
+  const p = { k, n, secuencia: Euclides(k, n) };
+  comparten = true;
+  Tejer(p, p);
+}
+
+// el patrón se repite hasta cubrir el lienzo
+function Tejer(pU, pT) {
+  urdimbre = { ...pU, hilos: ColoresHilos(pU, ceil(width / CONFIG.grosor)) };
+  trama = { ...pT, hilos: ColoresHilos(pT, ceil(height / CONFIG.grosor)) };
+
+  fase = 'urdimbre';
+  hilo = 0;
+  t0 = millis();
+  loop();
+}
+
+// ---------- p5 ----------
+// todo lo que queda a la derecha del panel
+function tamañoLienzo() {
+  return [windowWidth - document.getElementById('panel').offsetWidth, windowHeight];
+}
+
+function setup() {
+  createCanvas(...tamañoLienzo()).parent('lienzo');
+  textFont('monospace');
+  noStroke();
+  NuevaReceta();
+}
+
+// misma receta, recalcula cuántos hilos entran y vuelve a tejer
+function windowResized() {
+  resizeCanvas(...tamañoLienzo());
+  Tejer(urdimbre, trama);
+}
+
+function draw() {
+  background(FONDO);
+  const g = CONFIG.grosor, m = CONFIG.margen;
+  const totalU = urdimbre.hilos.length, totalT = trama.hilos.length;
+  const progreso = constrain((millis() - t0) / CONFIG.tiempoHilo, 0, 1);
+
+  // URDIMBRES: crecen de arriba hacia abajo
+  const nU = fase === 'urdimbre' ? hilo : totalU;
+  for (let i = 0; i < nU; i++) {
+    fill(urdimbre.hilos[i]);
+    rect(i * g, 0, g, height);
+  }
+  if (fase === 'urdimbre') {
+    fill(urdimbre.hilos[hilo]);
+    rect(hilo * g, 0, g, height * progreso);
+  }
+
+  // TRAMAS: crecen de derecha a izquierda, tafetán
+  const nT = fase === 'trama' ? hilo : fase === 'fin' ? totalT : 0;
+  for (let j = 0; j < nT; j++) dibujarTrama(j, 1);
+  if (fase === 'trama') dibujarTrama(hilo, progreso);
+
+  // LEYENDA: banda blanca abajo, encima del tejido
+  const y0 = height - ALTO_LEYENDA;
+  fill(255);
+  rect(0, y0, width, ALTO_LEYENDA);
+  leyenda('URDIMBRE', urdimbre, m, y0 + 20);
+  leyenda('TRAMA   ', trama, m, y0 + 45);
+
+  // avanzar al siguiente hilo
+  if (fase !== 'fin' && progreso >= 1) {
+    hilo++;
+    t0 = millis();
+    if (fase === 'urdimbre' && hilo >= totalU) { fase = 'trama'; hilo = 0; }
+    else if (fase === 'trama' && hilo >= totalT) { fase = 'fin'; noLoop(); }
+  }
+}
+
+// trama j: solo se pinta en los cruces donde va adelante
+function dibujarTrama(j, progreso) {
+  const g = CONFIG.grosor;
+  const x0 = width * (1 - progreso);        // borde izquierdo de lo que ya entró
+  fill(trama.hilos[j]);
+  for (let i = 0; i < urdimbre.hilos.length; i++) {
+    if ((j + i) % 2 === 0) continue;        // urdimbre adelante
+    const a = max(i * g, x0);
+    const b = (i + 1) * g;
+    if (b > a) rect(a, j * g, b - a, g);
+  }
+}
+
+// período completo: casilla = color, punto = 1, línea = reinicio de secuencia
+function leyenda(nombre, S, x, y) {
+  const largo = min(periodo(S), S.hilos.length);
+  const x0 = x + 130;
+  const s = min(14, (width - x0 - CONFIG.margen) / largo - 2);
+
+  fill(TEXTO);
+  textSize(11);
+  text(`${nombre} E(${S.k},${S.n})`, x, y + 10);
+
+  for (let i = 0; i < largo; i++) {
+    const cx = x0 + i * (s + 2);
+    fill(S.hilos[i]);
+    rect(cx, y, s, 14);
+    fill(TEXTO);
+    if (S.secuencia[i % S.n]) circle(cx + s / 2, y + 7, min(4, s * 0.6));
+    if (i > 0 && i % S.n === 0) rect(cx - 2, y - 3, 1, 20);
+  }
+}
+
+// ---------- GUARDAR ----------
+function descargar(canvasEl, nombre) {
+  const link = document.createElement('a');
+  link.download = nombre + '.png';
+  link.href = canvasEl.toDataURL('image/png');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+// k,n en el nombre: un solo par si urdimbre y trama son iguales
+function nombreArchivo(extra) {
+  const u = `${urdimbre.k},${urdimbre.n}`;
+  const t = `${trama.k},${trama.n}`;
+  return `telar-euclidiano${extra}-` + (u === t ? u : `u${u}-t${t}`);
+}
+
+// ancho = mcm(período urdimbre, 2) · alto = mcm(período trama, 2)
+// el 2 es por el tafetán (ajedrez)
+function tamañoTile() {
+  return { w: mcm(periodo(urdimbre), 2), h: mcm(periodo(trama), 2) };
+}
+
+function GuardarTile() {
+  const { w, h } = tamañoTile();
+  const g = CONFIG.grosor;
+  const colU = ColoresHilos(urdimbre, w);   // colores recalculados al largo del tile
+  const colT = ColoresHilos(trama, h);
+
+  const pg = createGraphics(w * g, h * g);
+  pg.pixelDensity(1);                       // 1 px real = 1 px
+  pg.noStroke();
+  for (let j = 0; j < h; j++) {
+    for (let i = 0; i < w; i++) {
+      pg.fill((i + j) % 2 === 0 ? colU[i] : colT[j]);
+      pg.rect(i * g, j * g, g, g);
+    }
+  }
+  descargar(pg.elt, nombreArchivo('-tile'));
+  pg.remove();
+}
+
+function GuardarCompleto() {
+  descargar(drawingContext.canvas, nombreArchivo(''));
+}
+
+// ---------- PANEL ----------
+function valor(id) {
+  return parseInt(document.getElementById(id).value, 10);
+}
+
+// grosor es general: vale para aleatorio y exacto
+function LeerGrosor() {
+  CONFIG.grosor = max(1, valor('grosor') || 1);
+  document.getElementById('grosor').value = CONFIG.grosor;
+}
+
+function GenerarAleatorio() {
+  LeerGrosor();
+  CONFIG.nColores = constrain(valor('aColores') || 2, 2, PALETA.length);
+  CONFIG.nMin = max(2, valor('aMin') || 2);
+  CONFIG.nMax = max(CONFIG.nMin, valor('aMax') || CONFIG.nMin);
+  CONFIG.modo = document.getElementById('aModo').value;
+  NuevaReceta();
+}
+
+function GenerarExacto() {
+  LeerGrosor();
+  const n = max(2, valor('eN') || 2);
+  const k = constrain(valor('eK') || 1, 1, n - 1);   // 1 a n - 1
+  document.getElementById('eN').value = n;
+  document.getElementById('eK').value = k;
+  CONFIG.nColores = constrain(valor('eColores') || 2, 2, PALETA.length);
+  RecetaExacta(k, n);
+}
+
+// cambiar el grosor vuelve a tejer la misma receta
+document.getElementById('grosor').onchange = () => { LeerGrosor(); Tejer(urdimbre, trama); };
+document.getElementById('bAleatorio').onclick = GenerarAleatorio;
+document.getElementById('bExacto').onclick = GenerarExacto;
+document.getElementById('bTile').onclick = GuardarTile;
+document.getElementById('bCompleto').onclick = GuardarCompleto;
+
+function keyPressed() {
+  if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
+  const k = key.toLowerCase();
+  if (k === 'r') GenerarAleatorio();
+  if (k === 'g') GuardarCompleto();
+  if (k === 't') GuardarTile();
+}
+</script>
+</body>
+</html>
