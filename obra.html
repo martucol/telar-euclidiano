@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telar euclidiano · obra</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #efe6d2;
+    }
+    canvas { display: block; }
+  </style>
+  <script src="p5.min.js"></script>
+</head>
+<body>
+
+<script>
+// =====================================================
+// TELAR EUCLIDIANO · OBRA (p5.js)
+// loop infinito a pantalla completa, sin panel ni leyenda:
+// receta → urdimbres → tramas → consola → espera → otra receta encima
+// cada receta se teje SIN LIMPIAR la anterior
+// =====================================================
+
+/*
+Combinaciones que me gustaron:
+- urdimbre E(2,4) E(1,2) 2010 · colores #8a5a2b #d8f707 #b1d1f5
+- urdimbre E(25,27) E(9,25) 201121211211210121211211211 · colores #d8f707 #b1d1f5 #efa5e4 -> esta me hizo ilusion optica
+- urdimbre E(1,6) 100000 · colores #b1d1f5 #d8f707 #8a5a2b -> bonita y simple
+*/
+
+const CONFIG = {
+  grosor: 16,           // px por hilo · la cantidad de hilos sale del tamaño de pantalla
+  nColores: 3,          // con acento: 2 colores base + 1 acento
+  nMin: 2,              // rango de n
+  nMax: 29,
+  modo: 'igual',        // 'igual' | 'distinto' | 'aleatorio'
+  acento: true,         // sortea a entre 1 y k - 1
+  tiempoHilo: 50,       // ms que tarda cada hilo en crecer
+  espera: 6000,         // ms de pausa entre una receta y la siguiente
+};
+
+const PALETA = ['#b1d1f5', '#efa5e4', '#d8f707', '#8a5a2b'];
+const FONDO = '#efe6d2';
+
+let colores, urdimbre, trama, comparten;
+let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'espera'
+
+// ---------- EUCLIDES ----------
+function Euclides(k, n) {
+  let a = Array.from({ length: k }, () => [1]);
+  let b = Array.from({ length: n - k }, () => [0]);
+  while (b.length > 1) {
+    const m = min(a.length, b.length);
+    const unidos = [];
+    for (let i = 0; i < m; i++) unidos.push(a[i].concat(b[i]));
+    b = a.length > m ? a.slice(m) : b.slice(m);
+    a = unidos;
+  }
+  return a.concat(b).flat();
+}
+
+// ---------- RECETA ----------
+function Patron() {
+  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
+  const k = floor(random(1, n));            // 1 a n - 1
+  const a = CONFIG.acento && k > 1 ? floor(random(1, k)) : 0;   // 1 a k - 1, sin acento si k = 1
+  return { k, n, a, secuencia: Acento(Euclides(k, n), k, a) };
+}
+
+// 1000101000 → 1000 color 1 · 10 color 2 ...
+function ColoresHilos(p, total) {
+  if (p.a) return ColoresHilosAcento(p, total);
+  const hilos = [];
+  let colorActual = -1;                     // el primer 1 lo lleva a 0
+  let Indice = 0;
+  while (Indice < total) {
+    if (p.secuencia[Indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
+    hilos[Indice] = colores[colorActual];
+    Indice++;
+  }
+  return hilos;
+}
+
+// ---------- ACENTO ----------
+// principal E(k,n), acento E(a,k): el acento se reparte sobre los k unos
+function Acento(secuencia, k, a) {
+  if (!a) return secuencia;
+  const acento = Euclides(a, k);
+  let uno = 0;                              // cuántos 1 van recorridos
+  return secuencia.map(x => x === 1 ? (acento[uno++] ? 2 : 1) : 0);
+}
+
+// cada 1 alterna entre los 2 colores base · cada 2 pinta el color acento
+// los 0 mantienen el último color
+function ColoresHilosAcento(p, total) {
+  const hilos = [];
+  let colorActual = -1;
+  let colorBase = -1;
+  let Indice = 0;
+  while (Indice < total) {
+    const x = p.secuencia[Indice % p.n];
+    if (x === 1) colorActual = colorBase = (colorBase + 1) % 2;
+    if (x === 2) colorActual = 2;
+    hilos[Indice] = colores[colorActual];
+    Indice++;
+  }
+  return hilos;
+}
+
+function NuevaReceta() {
+  colores = shuffle(PALETA).slice(0, CONFIG.nColores);
+  const pU = Patron();
+  comparten = CONFIG.modo === 'igual' || (CONFIG.modo === 'aleatorio' && random() < 0.5);
+  const pT = comparten ? pU : Patron();
+  Tejer(pU, pT);
+}
+
+// el patrón se repite hasta cubrir la pantalla
+function Tejer(pU, pT) {
+  urdimbre = { ...pU, hilos: ColoresHilos(pU, ceil(width / CONFIG.grosor)) };
+  trama = { ...pT, hilos: ColoresHilos(pT, ceil(height / CONFIG.grosor)) };
+  fase = 'urdimbre';
+  hilo = 0;
+  t0 = millis();
+}
+
+// receta terminada → consola
+function Registrar() {
+  const ejes = S => `E(${S.k},${S.n})` + (S.a ? ` E(${S.a},${S.k})` : '') + ` ${S.secuencia.join('')}`;
+  console.log(
+    `urdimbre ${ejes(urdimbre)}` + (comparten ? '' : ` · trama ${ejes(trama)}`) +
+    ` · colores ${colores.join(' ')}`
+  );
+}
+
+// ---------- p5 ----------
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  noStroke();
+  background(FONDO);
+  NuevaReceta();
+}
+
+// al cambiar el tamaño se limpia y arranca de nuevo
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  background(FONDO);
+  NuevaReceta();
+}
+
+// sin background(): cada frame pinta solo el hilo que está creciendo
+function draw() {
+  if (fase === 'espera') {
+    if (millis() - t0 >= CONFIG.espera) NuevaReceta();
+    return;
+  }
+
+  const g = CONFIG.grosor;
+  const progreso = constrain((millis() - t0) / CONFIG.tiempoHilo, 0, 1);
+
+  // URDIMBRES: crecen de arriba hacia abajo
+  if (fase === 'urdimbre') {
+    fill(urdimbre.hilos[hilo]);
+    rect(hilo * g, 0, g, height * progreso);
+  }
+
+  // TRAMAS: crecen de derecha a izquierda, tafetán
+  if (fase === 'trama') dibujarTrama(hilo, progreso);
+
+  // avanzar al siguiente hilo
+  if (progreso >= 1) {
+    hilo++;
+    t0 = millis();
+    if (fase === 'urdimbre' && hilo >= urdimbre.hilos.length) { fase = 'trama'; hilo = 0; }
+    else if (fase === 'trama' && hilo >= trama.hilos.length) { fase = 'espera'; Registrar(); }
+  }
+}
+
+// trama j: solo se pinta en los cruces donde va adelante
+function dibujarTrama(j, progreso) {
+  const g = CONFIG.grosor;
+  const x0 = width * (1 - progreso);        // borde izquierdo de lo que ya entró
+  fill(trama.hilos[j]);
+  for (let i = 0; i < urdimbre.hilos.length; i++) {
+    if ((j + i) % 2 === 0) continue;        // urdimbre adelante
+    const a = max(i * g, x0);
+    const b = (i + 1) * g;
+    if (b > a) rect(a, j * g, b - a, g);
+  }
+}
+</script>
+</body>
+</html>
