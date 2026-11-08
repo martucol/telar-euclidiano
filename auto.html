@@ -191,6 +191,34 @@ function dibujarTrama(j, progreso) {
     if (b > a) rect(a, j * g, b - a, g);
   }
 }
+
+// ---------- GUARDAR ----------
+function descargar(canvasEl, nombre) {
+  const link = document.createElement('a');
+  link.download = nombre + '.png';
+  link.href = canvasEl.toDataURL('image/png');
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+// k,n en el nombre: un solo par si urdimbre y trama son iguales
+// con acento se agrega a: 5,8,a2
+function nombreArchivo(extra) {
+  const ejes = S => `${S.k},${S.n}` + (S.a ? `,a${S.a}` : '');
+  const u = ejes(urdimbre);
+  const t = ejes(trama);
+  return `telar-euclidiano${extra}-` + (u === t ? u : `u${u}-t${t}`);
+}
+
+// guarda lo que está en pantalla tal cual
+function GuardarCompleto() {
+  descargar(drawingContext.canvas, nombreArchivo(''));
+}
+
+function keyPressed() {
+  if (key.toLowerCase() === 'g') GuardarCompleto();
+}
 </script>
 </body>
 </html>
