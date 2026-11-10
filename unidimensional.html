@@ -80,17 +80,12 @@ let COLORES, SECUENCIAEUCLIDES, n, k, colorActual;
 // ---------- ALGORITMO ----------
 
 // array de n posiciones con distribución euclidiana de 1s y 0s para k
+// fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
+// reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
 function Euclides(k, n) {
-  let a = Array.from({ length: k }, () => [1]);
-  let b = Array.from({ length: n - k }, () => [0]);
-  while (b.length > 1) {
-    const m = min(a.length, b.length);
-    const unidos = [];
-    for (let i = 0; i < m; i++) unidos.push(a[i].concat(b[i]));
-    b = a.length > m ? a.slice(m) : b.slice(m);
-    a = unidos;
-  }
-  return a.concat(b).flat();
+  const secuencia = [];
+  for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
+  return secuencia;
 }
 
 function NuevaReceta() {

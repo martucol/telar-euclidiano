@@ -165,17 +165,12 @@ let colores, urdimbre, trama, comparten;
 let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'fin'
 
 // ---------- EUCLIDES ----------
+// fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
+// reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
 function Euclides(k, n) {
-  let a = Array.from({ length: k }, () => [1]);
-  let b = Array.from({ length: n - k }, () => [0]);
-  while (b.length > 1) {
-    const m = min(a.length, b.length);
-    const unidos = [];
-    for (let i = 0; i < m; i++) unidos.push(a[i].concat(b[i]));
-    b = a.length > m ? a.slice(m) : b.slice(m);
-    a = unidos;
-  }
-  return a.concat(b).flat();
+  const secuencia = [];
+  for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
+  return secuencia;
 }
 
 function mcd(a, b) {
@@ -218,7 +213,7 @@ function ColoresHilos(p, total) {
 
 // ---------- ACENTO ----------
 // principal E(k,n), acento E(a,k): el acento se reparte sobre los k unos
-// E(5,8) = 10110110 · E(2,5) = 10100 → 20120110
+// E(5,8) = 10101101 · E(2,5) = 10010 → 20101201
 // a = 0: sin acento, la secuencia queda igual
 function Acento(secuencia, k, a) {
   if (!a) return secuencia;

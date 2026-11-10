@@ -18,10 +18,7 @@
 
 <script>
 // =====================================================
-// TELAR EUCLIDIANO · AUTO (p5.js)
-// loop infinito a pantalla completa, sin panel ni leyenda:
-// receta → urdimbres → tramas → consola → espera → otra receta encima
-// cada receta se teje SIN LIMPIAR la anterior
+// TELAR EUCLIDIANO (p5.js)
 // =====================================================
 
 /*
@@ -32,14 +29,14 @@ Combinaciones que me gustaron:
 */
 
 const CONFIG = {
-  grosor: 16,           // px por hilo · la cantidad de hilos sale del tamaño de pantalla
-  nColores: 3,          // con acento: 2 colores base + 1 acento
-  nMin: 2,              // rango de n
-  nMax: 29,
-  modo: 'igual',        // 'igual' | 'distinto' | 'aleatorio'
-  acento: true,         // sortea a entre 1 y k - 1
+  grosor: 16,           // px por "hilo" · la cantidad de "hilos" horizontales y verticales se calcula a partir del alto / ancho de pantalla
+  nColores: 3,          // se eligen los colores aleatoriamente a partir de la paleta
+  nMin: 2,              // minimo valor para n
+  nMax: 29,             // maximo valor para n
+  modo: 'igual',        // define si urdimbre y trama tienen el mismo patron :  'igual' | 'distinto' | 'aleatorio'
+  acento: true,         // la base es de 2 colores, y calcula el acento aleatoriamente entre 1 y k - 1
   tiempoHilo: 50,       // ms que tarda cada hilo en crecer
-  espera: 4000,         // ms de pausa entre una receta y la siguiente
+  espera: 3000,         // ms de pausa entre una receta y la siguiente
 };
 
 const PALETA = ['#b1d1f5', '#efa5e4', '#d8f707', '#8a5a2b'];
@@ -49,20 +46,16 @@ let colores, urdimbre, trama, comparten;
 let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'espera'
 
 // ---------- EUCLIDES ----------
+// 
+// fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
+// reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
 function Euclides(k, n) {
-  let a = Array.from({ length: k }, () => [1]);
-  let b = Array.from({ length: n - k }, () => [0]);
-  while (b.length > 1) {
-    const m = min(a.length, b.length);
-    const unidos = [];
-    for (let i = 0; i < m; i++) unidos.push(a[i].concat(b[i]));
-    b = a.length > m ? a.slice(m) : b.slice(m);
-    a = unidos;
-  }
-  return a.concat(b).flat();
+  const secuencia = [];
+  for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
+  return secuencia;
 }
 
-// ---------- RECETA ----------
+// ----------GENERADOR DE RECETA ----------
 function Patron() {
   const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
   const k = floor(random(1, n));            // 1 a n - 1
