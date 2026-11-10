@@ -1,3 +1,4 @@
 .DS_Store
 *.md
+!informe.md
 *.png
