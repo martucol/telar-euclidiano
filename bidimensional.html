@@ -15,20 +15,19 @@
 // =====================================================
 // TELAR EUCLIDIANO (p5.js)
 // cada 1 = color siguiente · los 0 siguen el color de ese 1
-// urdimbre y trama con patrón propio, compartido o al azar
+// urdimbre y trama usan la misma secuencia
 // animación: urdimbres crecen de arriba hacia abajo,
 // después tramas crecen de derecha a izquierda en tafetán
-// Teclas: R nueva receta · G guardar png · T guardar tile repetible
+// Teclas: R nueva receta · G guardar png
 // =====================================================
 
 const CONFIG = {
-  nHilos: 100,         // hilos por dirección
+  nHilos: 100,         // cantidad de hilos por dirección
   grosor: 4,           // px por hilo
   nColores: 3,         // colores que alternan
   nMin: 2,             // rango de n
   nMax: 13,
-  modo: 'aleatorio',   // 'igual' | 'distinto' | 'aleatorio'
-  tiempoHilo: 10,     // ms que tarda cada hilo en crecer
+  tiempoHilo: 10,      // ms que tarda cada hilo en crecer
   margen: 30,
 };
 
@@ -37,7 +36,7 @@ const FONDO = '#efe6d2';
 const TEXTO = '#585050';
 
 let ANCHO, ALTO;
-let colores, urdimbre, trama, comparten;
+let colores, patron;
 let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'fin'
 
 // ---------- EUCLIDES ----------
@@ -47,20 +46,6 @@ function Euclides(k, n) {
   const secuencia = [];
   for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
   return secuencia;
-}
-
-function mcd(a, b) {
-  while (b) [a, b] = [b, a % b];
-  return a;
-}
-
-function mcm(a, b) {
-  return a * b / mcd(a, b);
-}
-
-// hilos hasta que el color vuelve al inicio
-function periodo(S) {
-  return S.n * CONFIG.nColores / mcd(S.k, CONFIG.nColores);
 }
 
 // ---------- RECETA ----------
@@ -85,11 +70,8 @@ function ColoresHilos(p, total) {
 
 function NuevaReceta() {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  const pU = Patron();
-  comparten = CONFIG.modo === 'igual' || (CONFIG.modo === 'aleatorio' && random() < 0.5);
-  const pT = comparten ? pU : Patron();
-  urdimbre = { ...pU, hilos: ColoresHilos(pU, CONFIG.nHilos) };
-  trama = { ...pT, hilos: ColoresHilos(pT, CONFIG.nHilos) };
+  const p = Patron();
+  patron = { ...p, hilos: ColoresHilos(p, CONFIG.nHilos) };
 
   fase = 'urdimbre';
   hilo = 0;
@@ -101,7 +83,7 @@ function NuevaReceta() {
 function setup() {
   ANCHO = CONFIG.nHilos * CONFIG.grosor;
   ALTO = CONFIG.nHilos * CONFIG.grosor;
-  createCanvas(ANCHO + 2 * CONFIG.margen, ALTO + 2 * CONFIG.margen + 80);
+  createCanvas(ANCHO + 2 * CONFIG.margen, ALTO + 2 * CONFIG.margen + 30);
   textFont('monospace');
   noStroke();
   NuevaReceta();
@@ -115,11 +97,11 @@ function draw() {
   // URDIMBRES: crecen de arriba hacia abajo
   const nU = fase === 'urdimbre' ? hilo : CONFIG.nHilos;
   for (let i = 0; i < nU; i++) {
-    fill(urdimbre.hilos[i]);
+    fill(patron.hilos[i]);
     rect(m + i * g, m, g, ALTO);
   }
   if (fase === 'urdimbre') {
-    fill(urdimbre.hilos[hilo]);
+    fill(patron.hilos[hilo]);
     rect(m + hilo * g, m, g, ALTO * progreso);
   }
 
@@ -128,11 +110,7 @@ function draw() {
   for (let j = 0; j < nT; j++) dibujarTrama(j, 1);
   if (fase === 'trama') dibujarTrama(hilo, progreso);
 
-  leyenda('URDIMBRE', urdimbre, m, m + ALTO + 20);
-  leyenda('TRAMA   ', trama, m, m + ALTO + 45);
-  fill(TEXTO);
-  const t = tamañoTile();
-  text(`${comparten ? 'comparten patrón' : 'patrones distintos'} · tile ${t.w}x${t.h} hilos`, m, m + ALTO + 80);
+  leyenda(m, m + ALTO + 20);
 
   // avanzar al siguiente hilo
   if (fase !== 'fin' && progreso >= 1) {
@@ -147,7 +125,7 @@ function draw() {
 function dibujarTrama(j, progreso) {
   const g = CONFIG.grosor, m = CONFIG.margen;
   const x0 = m + ANCHO * (1 - progreso);    // borde izquierdo de lo que ya entró
-  fill(trama.hilos[j]);
+  fill(patron.hilos[j]);
   for (let i = 0; i < CONFIG.nHilos; i++) {
     if ((j + i) % 2 === 0) continue;        // urdimbre adelante
     const a = max(m + i * g, x0);
@@ -156,23 +134,21 @@ function dibujarTrama(j, progreso) {
   }
 }
 
-// período completo: casilla = color, punto = 1, línea = reinicio de secuencia
-function leyenda(nombre, S, x, y) {
-  const largo = min(periodo(S), CONFIG.nHilos);
+// una vuelta de la secuencia: casilla = color, punto = 1
+function leyenda(x, y) {
   const x0 = x + 130;
-  const s = min(14, (width - x0 - CONFIG.margen) / largo - 2);
+  const s = min(14, (width - x0 - CONFIG.margen) / patron.n - 2);
 
   fill(TEXTO);
   textSize(11);
-  text(`${nombre} E(${S.k},${S.n})`, x, y + 10);
+  text(`E(${patron.k},${patron.n})`, x, y + 10);
 
-  for (let i = 0; i < largo; i++) {
+  for (let i = 0; i < patron.n; i++) {
     const cx = x0 + i * (s + 2);
-    fill(S.hilos[i]);
+    fill(patron.hilos[i]);
     rect(cx, y, s, 14);
     fill(TEXTO);
-    if (S.secuencia[i % S.n]) circle(cx + s / 2, y + 7, min(4, s * 0.6));
-    if (i > 0 && i % S.n === 0) rect(cx - 2, y - 3, 1, 20);
+    if (patron.secuencia[i]) circle(cx + s / 2, y + 7, min(4, s * 0.6));
   }
 }
 
@@ -186,36 +162,10 @@ function descargar(canvasEl, nombre) {
   link.remove();
 }
 
-// ancho = mcm(período urdimbre, 2) · alto = mcm(período trama, 2)
-// el 2 es por el tafetán (ajedrez)
-function tamañoTile() {
-  return { w: mcm(periodo(urdimbre), 2), h: mcm(periodo(trama), 2) };
-}
-
-function GuardarTile() {
-  const { w, h } = tamañoTile();
-  const g = CONFIG.grosor;
-  const colU = ColoresHilos(urdimbre, w);   // colores recalculados al largo del tile
-  const colT = ColoresHilos(trama, h);
-
-  const pg = createGraphics(w * g, h * g);
-  pg.pixelDensity(1);                       // 1 px real = 1 px
-  pg.noStroke();
-  for (let j = 0; j < h; j++) {
-    for (let i = 0; i < w; i++) {
-      pg.fill((i + j) % 2 === 0 ? colU[i] : colT[j]);
-      pg.rect(i * g, j * g, g, g);
-    }
-  }
-  descargar(pg.elt, `tile-${w}x${h}`);
-  pg.remove();
-}
-
 function keyPressed() {
   const k = key.toLowerCase();
   if (k === 'r') NuevaReceta();
   if (k === 'g') descargar(drawingContext.canvas, 'telar-euclidiano');
-  if (k === 't') GuardarTile();
 }
 </script>
 </body>
