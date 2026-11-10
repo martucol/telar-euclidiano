@@ -63,14 +63,6 @@ function acento(secuencia, k, a) {
   return secuencia.map(x => x === 1 ? (acento[uno++] ? 2 : 1) : 0);
 }
 
-// ----------GENERADOR DE PATRÓN ----------
-function patron() {
-  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
-  const k = floor(random(2, n));            // 2 a n - 1
-  const a = floor(random(1, k));            // 1 a k - 1
-  return { k, n, a, secuencia: acento(euclides(k, n), k, a) };
-}
-
 // ---------- COLORES ----------
 // 1 → siguiente color base · 2 → color acento · 0 → mantiene el último color
 // con 3 colores: 20010010 → 200 acento · 100 base 1 · 10 base 2
@@ -80,16 +72,16 @@ function coloresHilos(p, total) {
   const hilos = [];
   let colorBase = -1;                       // el primer 1 lo lleva a 0
   let colorActual = -1;
-  let Indice = 0;
-  while (Indice < total) {
-    const paso = p.secuencia[Indice % p.n];
+  let indice = 0;
+  while (indice < total) {
+    const paso = p.secuencia[indice % p.n];
     if (paso === 1) {
       colorBase = (colorBase + 1) % nBase;
       colorActual = colorBase;
     }
     if (paso === 2) colorActual = acento;
-    hilos[Indice] = colores[colorActual];
-    Indice++;
+    hilos[indice] = colores[colorActual];
+    indice++;
   }
   return hilos;
 }
@@ -98,7 +90,10 @@ function coloresHilos(p, total) {
 // el patrón se repite hasta cubrir la pantalla
 function nuevoPatron() {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  patron = patron();
+  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
+  const k = floor(random(2, n));            // 2 a n - 1
+  const a = floor(random(1, k));            // 1 a k - 1
+  patron = { k, n, a, secuencia: acento(euclides(k, n), k, a) };
   urdimbre = coloresHilos(patron, ceil(width / CONFIG.grosor));
   trama = coloresHilos(patron, ceil(height / CONFIG.grosor));
   fase = 'urdimbre';
@@ -154,7 +149,7 @@ function draw() {
     hilo++;
     t0 = millis();
     if (fase === 'urdimbre' && hilo >= urdimbre.length) { fase = 'trama'; hilo = 0; }
-    else if (fase === 'trama' && hilo >= trama.length) { fase = 'espera'; Registrar(); }
+    else if (fase === 'trama' && hilo >= trama.length) { fase = 'espera'; registrar(); }
   }
 }
 

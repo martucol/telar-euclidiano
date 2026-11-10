@@ -35,43 +35,40 @@ const PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
 const FONDO = '#efe6d2';
 const TEXTO = '#585050';
 
-let ANCHO, ALTO;
+const ANCHO = CONFIG.nHilos * CONFIG.grosor;   // px del tejido
+const ALTO = CONFIG.nHilos * CONFIG.grosor;
 let colores, patron;
 let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'fin'
 
 // ---------- EUCLIDES ----------
 // fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
 // reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
-function Euclides(k, n) {
+function euclides(k, n) {
   const secuencia = [];
   for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
   return secuencia;
 }
 
-// ---------- PATRÓN ----------
-function Patron() {
-  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
-  const k = floor(random(1, n));            // 1 a n - 1
-  return { k, n, secuencia: Euclides(k, n) };
-}
-
 // 1000101000 → 1000 color 1 · 10 color 2 ...
-function ColoresHilos(p, total) {
+function coloresHilos(p, total) {
   const hilos = [];
   let colorActual = -1;                     // el primer 1 lo lleva a 0
-  let Indice = 0;
-  while (Indice < total) {
-    if (p.secuencia[Indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
-    hilos[Indice] = colores[colorActual];
-    Indice++;
+  let indice = 0;
+  while (indice < total) {
+    if (p.secuencia[indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
+    hilos[indice] = colores[colorActual];
+    indice++;
   }
   return hilos;
 }
 
-function NuevoPatron() {
+function nuevoPatron() {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  const p = Patron();
-  patron = { ...p, hilos: ColoresHilos(p, CONFIG.nHilos) };
+  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
+  const k = floor(random(1, n));            // 1 a n - 1
+
+  patron = { k, n, secuencia: euclides(k, n) };
+  patron.hilos = coloresHilos(patron, CONFIG.nHilos);
 
   fase = 'urdimbre';
   hilo = 0;
@@ -81,12 +78,10 @@ function NuevoPatron() {
 
 // ---------- p5 ----------
 function setup() {
-  ANCHO = CONFIG.nHilos * CONFIG.grosor;
-  ALTO = CONFIG.nHilos * CONFIG.grosor;
   createCanvas(ANCHO + 2 * CONFIG.margen, ALTO + 2 * CONFIG.margen + 30);
   textFont('monospace');
   noStroke();
-  NuevoPatron();
+  nuevoPatron();
 }
 
 function draw() {
@@ -164,7 +159,7 @@ function descargar(canvasEl, nombre) {
 
 function keyPressed() {
   const k = key.toLowerCase();
-  if (k === 'r') NuevoPatron();
+  if (k === 'r') nuevoPatron();
   if (k === 'g') descargar(drawingContext.canvas, 'telar-euclidiano');
 }
 </script>

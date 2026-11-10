@@ -14,40 +14,40 @@ Variables:
   PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
   FONDO = '#efe6d2';
   TEXTO = '#585050';
-  SECUENCIAHILOS = []
-  Indice = 0
+  secuenciaHilos = []
+  indice = 0
 
 
 
 Algoritmo:
 
-- Euclides (k, n) :
+- euclides (k, n) :
 		Devuelve un array de n posiciones, con la distribucion euclidiana de 1s y 0s para k cantidad de 1s
-- NuevoPatron () :
-		COLORES[] = elegir aleatoriamente nColores cant de items dentro de la lista PALETA
+- nuevoPatron () :
+		colores[] = elegir aleatoriamente nColores cant de items dentro de la lista PALETA
 		n = elegir aleatoriamente el valor de n entre nMin y nMax
 		k = elegir aleatoriamente el valor de k entre 1 y ( n - 1  )
-		SECUENCIAEUCLIDES = obtener secuencia Euclides(k,n)
+		secuenciaEuclides = obtener secuencia euclides(k,n)
 		colorActual = 0            
   
-- Dibujar(secuencia):
+- dibujar(secuencia):
 		Pintar FONDO en todo el canvas
 		Para cada Item de secuencia:
 			dibujar un rectángulo de GROSOR px de ancho y ALTO px de alto
-			en x = MARGEN + Indice del Item * GROSOR, y = MARGEN
+			en x = MARGEN + indice del Item * GROSOR, y = MARGEN
 			con color = valor del Item
 		Debajo, dejando MARGEN px, escribir (k, n) como referencia
 
 	
-Bucle:
+bucle:
 	// pasar de 1000101000 a 1000 => color uno 10 => color 2, es decir: 
-	Indice = 0 
-	Mientras Indice < nHilos
-		si SECUENCIAEUCLIDES[ Indice % n ] == 1 
+	indice = 0 
+	Mientras indice < nHilos
+		si secuenciaEuclides[ indice % n ] == 1 
 			 =>	colorActual =  (colorActual + 1) % nColores
-		SECUENCIAHILOS[Indice] = COLORES[colorActual]
-		Indice +1 , hasta que Indice == nHilos
-	Cuando Indice == nHilos, salir del bucle, y Dibujar(SECUENCIAHILOS) 
+		secuenciaHilos[indice] = colores[colorActual]
+		indice +1 , hasta que indice == nHilos
+	Cuando indice == nHilos, salir del bucle, y dibujar(secuenciaHilos) 
   
   -->
 
@@ -76,26 +76,26 @@ const MARGEN = 30;
 const PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
 const FONDO = '#efe6d2';
 const TEXTO = '#585050';
-let SECUENCIAHILOS = [];
-let Indice = 0;
+let secuenciaHilos = [];
+let indice = 0;
 
-let COLORES, SECUENCIAEUCLIDES, n, k, colorActual;
+let colores, secuenciaEuclides, n, k, colorActual;
 
-function Euclides(k, n) {
+function euclides(k, n) {
   const secuencia = [];
   for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
   return secuencia;
 }
 
-function NuevoPatron() {
-  COLORES = shuffle(PALETA).slice(0, nColores);
+function nuevoPatron() {
+  colores = shuffle(PALETA).slice(0, nColores);
   n = floor(random(nMin, nMax + 1));
   k = floor(random(1, n));                 // 1 a n - 1
-  SECUENCIAEUCLIDES = Euclides(k, n);
+  secuenciaEuclides = euclides(k, n);
   colorActual = 0 ;                   
 }
 
-function Dibujar(secuencia) {
+function dibujar(secuencia) {
   background(FONDO);
   noStroke();
   for (let i = 0; i < secuencia.length; i++) {
@@ -108,14 +108,14 @@ function Dibujar(secuencia) {
 }
 
 // pasa de 1000101000 a 1000 => color 1, 10 => color 2 ...
-function Bucle() {
-  Indice = 0;
-  while (Indice < nHilos) {
-    if (SECUENCIAEUCLIDES[Indice % n] === 1) colorActual = (colorActual + 1) % nColores;
-    SECUENCIAHILOS[Indice] = COLORES[colorActual];
-    Indice++;
+function bucle() {
+  indice = 0;
+  while (indice < nHilos) {
+    if (secuenciaEuclides[indice % n] === 1) colorActual = (colorActual + 1) % nColores;
+    secuenciaHilos[indice] = colores[colorActual];
+    indice++;
   }
-  Dibujar(SECUENCIAHILOS);
+  dibujar(secuenciaHilos);
 }
 
 // ---------- p5 ----------
@@ -123,8 +123,8 @@ function setup() {
   createCanvas(nHilos * GROSOR + MARGEN * 2, ALTO + MARGEN * 3);
   textFont('monospace');
   noLoop();
-  NuevoPatron();
-  Bucle();
+  nuevoPatron();
+  bucle();
 }
 </script>
 </body>

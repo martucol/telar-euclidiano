@@ -167,7 +167,7 @@ let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'fin'
 // ---------- EUCLIDES ----------
 // fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
 // reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
-function Euclides(k, n) {
+function euclides(k, n) {
   const secuencia = [];
   for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
   return secuencia;
@@ -190,23 +190,23 @@ function periodo(S) {
 }
 
 // ---------- PATRÓN ----------
-function Patron() {
+function generarPatronEuclideano() {
   const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
   const k = floor(random(1, n));            // 1 a n - 1
   const a = CONFIG.acento && k > 1 ? floor(random(1, k)) : 0;   // 1 a k - 1, sin acento si k = 1
-  return { k, n, a, secuencia: Acento(Euclides(k, n), k, a) };
+  return { k, n, a, secuencia: acento(euclides(k, n), k, a) };
 }
 
 // 1000101000 → 1000 color 1 · 10 color 2 ...
-function ColoresHilos(p, total) {
-  if (p.a) return ColoresHilosAcento(p, total);
+function coloresHilos(p, total) {
+  if (p.a) return coloresHilosAcento(p, total);
   const hilos = [];
   let colorActual = -1;                     // el primer 1 lo lleva a 0
-  let Indice = 0;
-  while (Indice < total) {
-    if (p.secuencia[Indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
-    hilos[Indice] = colores[colorActual];
-    Indice++;
+  let indice = 0;
+  while (indice < total) {
+    if (p.secuencia[indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
+    hilos[indice] = colores[colorActual];
+    indice++;
   }
   return hilos;
 }
@@ -215,9 +215,9 @@ function ColoresHilos(p, total) {
 // principal E(k,n), acento E(a,k): el acento se reparte sobre los k unos
 // E(5,8) = 10101101 · E(2,5) = 10010 → 20101201
 // a = 0: sin acento, la secuencia queda igual
-function Acento(secuencia, k, a) {
+function acento(secuencia, k, a) {
   if (!a) return secuencia;
-  const acento = Euclides(a, k);
+  const acento = euclides(a, k);
   let uno = 0;                              // cuántos 1 van recorridos
   return secuencia.map(x => x === 1 ? (acento[uno++] ? 2 : 1) : 0);
 }
@@ -225,41 +225,41 @@ function Acento(secuencia, k, a) {
 // con acento: 2 colores para la base y 1 extra para los 2
 // cada 1 alterna entre los 2 colores base · cada 2 pinta el color acento
 // los 0 mantienen el último color
-function ColoresHilosAcento(p, total) {
+function coloresHilosAcento(p, total) {
   const hilos = [];
   let colorActual = -1;
   let colorBase = -1;
-  let Indice = 0;
-  while (Indice < total) {
-    const x = p.secuencia[Indice % p.n];
+  let indice = 0;
+  while (indice < total) {
+    const x = p.secuencia[indice % p.n];
     if (x === 1) colorActual = colorBase = (colorBase + 1) % 2;
     if (x === 2) colorActual = 2;
-    hilos[Indice] = colores[colorActual];
-    Indice++;
+    hilos[indice] = colores[colorActual];
+    indice++;
   }
   return hilos;
 }
 
-function NuevoPatron() {
+function nuevoPatron() {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  const pU = Patron();
+  const pU = generarPatronEuclideano();
   comparten = CONFIG.modo === 'igual' || (CONFIG.modo === 'aleatorio' && random() < 0.5);
-  const pT = comparten ? pU : Patron();
-  Tejer(pU, pT);
+  const pT = comparten ? pU : generarPatronEuclideano();
+  tejer(pU, pT);
 }
 
 // k y n dados por el usuario, mismo patrón en urdimbre y trama
-function PatronExacto(k, n, a) {
+function patronExacto(k, n, a) {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  const p = { k, n, a, secuencia: Acento(Euclides(k, n), k, a) };
+  const p = { k, n, a, secuencia: acento(euclides(k, n), k, a) };
   comparten = true;
-  Tejer(p, p);
+  tejer(p, p);
 }
 
 // el patrón se repite hasta cubrir el lienzo
-function Tejer(pU, pT) {
-  urdimbre = { ...pU, hilos: ColoresHilos(pU, ceil(width / CONFIG.grosor)) };
-  trama = { ...pT, hilos: ColoresHilos(pT, ceil(height / CONFIG.grosor)) };
+function tejer(pU, pT) {
+  urdimbre = { ...pU, hilos: coloresHilos(pU, ceil(width / CONFIG.grosor)) };
+  trama = { ...pT, hilos: coloresHilos(pT, ceil(height / CONFIG.grosor)) };
 
   fase = 'urdimbre';
   hilo = 0;
@@ -277,13 +277,13 @@ function setup() {
   createCanvas(...tamañoLienzo()).parent('lienzo');
   textFont('monospace');
   noStroke();
-  NuevoPatron();
+  nuevoPatron();
 }
 
 // mismo patrón, recalcula cuántos hilos entran y vuelve a tejer
 function windowResized() {
   resizeCanvas(...tamañoLienzo());
-  Tejer(urdimbre, trama);
+  tejer(urdimbre, trama);
 }
 
 function draw() {
@@ -382,11 +382,11 @@ function tamañoTile() {
   return { w: mcm(periodo(urdimbre), 2), h: mcm(periodo(trama), 2) };
 }
 
-function GuardarTile() {
+function guardarTile() {
   const { w, h } = tamañoTile();
   const g = CONFIG.grosor;
-  const colU = ColoresHilos(urdimbre, w);   // colores recalculados al largo del tile
-  const colT = ColoresHilos(trama, h);
+  const colU = coloresHilos(urdimbre, w);   // colores recalculados al largo del tile
+  const colT = coloresHilos(trama, h);
 
   const pg = createGraphics(w * g, h * g);
   pg.pixelDensity(1);                       // 1 px real = 1 px
@@ -401,7 +401,7 @@ function GuardarTile() {
   pg.remove();
 }
 
-function GuardarCompleto() {
+function guardarCompleto() {
   descargar(drawingContext.canvas, nombreArchivo(''));
 }
 
@@ -411,65 +411,65 @@ function valor(id) {
 }
 
 // grosor es general: vale para aleatorio y exacto
-function LeerGrosor() {
+function leerGrosor() {
   CONFIG.grosor = max(1, valor('grosor') || 1);
   document.getElementById('grosor').value = CONFIG.grosor;
 }
 
-function GenerarAleatorio() {
-  LeerGrosor();
+function generarAleatorio() {
+  leerGrosor();
   CONFIG.acento = document.getElementById('aAcento').checked;
   // con acento: 2 colores base + 1 acento, cant. colores no se usa
   CONFIG.nColores = CONFIG.acento ? 3 : constrain(valor('aColores') || 2, 2, PALETA.length);
   CONFIG.nMin = max(2, valor('aMin') || 2);
   CONFIG.nMax = max(CONFIG.nMin, valor('aMax') || CONFIG.nMin);
   CONFIG.modo = 'igual' //document.getElementById('aModo').value;
-  NuevoPatron();
+  nuevoPatron();
 }
 
-function GenerarExacto() {
-  LeerGrosor();
+function generarExacto() {
+  leerGrosor();
   const n = max(2, valor('eN') || 2);
   const k = constrain(valor('eK') || 1, 1, n - 1);   // 1 a n - 1
   document.getElementById('eN').value = n;
   document.getElementById('eK').value = k;
   const a = constrain(valor('eA') || 0, 0, k - 1);   // 0 = sin acento
   document.getElementById('eA').value = a;
-  BloquearColores();
+  bloquearColores();
   CONFIG.nColores = a ? 3 : constrain(valor('eColores') || 2, 2, PALETA.length);
-  PatronExacto(k, n, a);
+  patronExacto(k, n, a);
 }
 
 // activa un botón del toggle y muestra solo la sección de ese modo
-function MostrarSeccion(m) {
+function mostrarSeccion(m) {
   document.querySelectorAll('#modo button').forEach(b => b.classList.toggle('activo', b.dataset.modo === m));
   document.getElementById('sAleatorio').hidden = m !== 'aleatorio';
   document.getElementById('sCustom').hidden = m !== 'custom';
 }
 
 // con acento la cantidad de colores es fija (2 base + 1 acento)
-function BloquearColores() {
+function bloquearColores() {
   document.getElementById('aColores').disabled = document.getElementById('aAcento').checked;
   document.getElementById('eColores').disabled = valor('eA') > 0;
 }
 
-document.querySelectorAll('#modo button').forEach(b => b.onclick = () => MostrarSeccion(b.dataset.modo));
-document.getElementById('aAcento').onchange = BloquearColores;
-document.getElementById('eA').oninput = BloquearColores;
-BloquearColores();
+document.querySelectorAll('#modo button').forEach(b => b.onclick = () => mostrarSeccion(b.dataset.modo));
+document.getElementById('aAcento').onchange = bloquearColores;
+document.getElementById('eA').oninput = bloquearColores;
+bloquearColores();
 // cambiar el grosor vuelve a tejer el mismo patrón
-document.getElementById('grosor').onchange = () => { LeerGrosor(); Tejer(urdimbre, trama); };
-document.getElementById('bAleatorio').onclick = GenerarAleatorio;
-document.getElementById('bExacto').onclick = GenerarExacto;
-// document.getElementById('bTile').onclick = GuardarTile;
-document.getElementById('bCompleto').onclick = GuardarCompleto;
+document.getElementById('grosor').onchange = () => { leerGrosor(); tejer(urdimbre, trama); };
+document.getElementById('bAleatorio').onclick = generarAleatorio;
+document.getElementById('bExacto').onclick = generarExacto;
+// document.getElementById('bTile').onclick = guardarTile;
+document.getElementById('bCompleto').onclick = guardarCompleto;
 
 function keyPressed() {
   if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
   const k = key.toLowerCase();
-  if (k === 'r') GenerarAleatorio();
-  if (k === 'g') GuardarCompleto();
-  // if (k === 't') GuardarTile();
+  if (k === 'r') generarAleatorio();
+  if (k === 'g') guardarCompleto();
+  // if (k === 't') guardarTile();
 }
 </script>
 </body>
