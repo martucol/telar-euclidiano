@@ -1,33 +1,35 @@
 
 
-<!-- Variables:
+<!-- 
+ 
+Variables:
 
-nHilos = 100 // cantidad de hilos
-GROSOR = 4 // px por hilo
-ALTO = 100 // px alto total 
-nColores = 2 // cant colores q alternan
-nMin  = 2 // minimo rango de pasos secuencia
-nMax  =  13 // max rango de pasos secuencia
-MARGEN = 30 
-PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
-FONDO = '#efe6d2';
- TEXTO = '#585050';
-SECUENCIAHILOS = []
-Indice = 0
+  nHilos = 100 // cantidad de hilos
+  GROSOR = 4 // px por hilo
+  ALTO = 100 // px alto total 
+  nColores = 2 // cant colores q alternan
+  nMin  = 2 // minimo rango de pasos secuencia
+  nMax  =  13 // max rango de pasos secuencia
+  MARGEN = 30 // margen de espacio a los costados del patron generado
+  PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
+  FONDO = '#efe6d2';
+  TEXTO = '#585050';
+  SECUENCIAHILOS = []
+  Indice = 0
 
 
 
 Algoritmo:
 
 - Euclides (k, n) :
-		Devuelve un array de n posiciones, con la distribucion euclidiana de 1s y 0s para k
+		Devuelve un array de n posiciones, con la distribucion euclidiana de 1s y 0s para k cantidad de 1s
 - NuevaReceta () :
 		COLORES[] = elegir aleatoriamente nColores cant de items dentro de la lista PALETA
 		n = elegir aleatoriamente el valor de n entre nMin y nMax
 		k = elegir aleatoriamente el valor de k entre 1 y ( n - 1  )
 		SECUENCIAEUCLIDES = obtener secuencia Euclides(k,n)
-		colorActual = -1            // el primer 1 lo lleva a 0
-
+		colorActual = 0            
+  
 - Dibujar(secuencia):
 		Pintar FONDO en todo el canvas
 		Para cada Item de secuencia:
@@ -45,7 +47,9 @@ Bucle:
 			 =>	colorActual =  (colorActual + 1) % nColores
 		SECUENCIAHILOS[Indice] = COLORES[colorActual]
 		Indice +1 , hasta que Indice == nHilos
-	Cuando Indice == nHilos hilos, salir del bucle, y Dibujar(SECUENCIAHILOS) -->
+	Cuando Indice == nHilos, salir del bucle, y Dibujar(SECUENCIAHILOS) 
+  
+  -->
 
 <!doctype html>
 <html lang="es">
@@ -77,11 +81,6 @@ let Indice = 0;
 
 let COLORES, SECUENCIAEUCLIDES, n, k, colorActual;
 
-// ---------- ALGORITMO ----------
-
-// array de n posiciones con distribución euclidiana de 1s y 0s para k
-// fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
-// reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
 function Euclides(k, n) {
   const secuencia = [];
   for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
@@ -93,7 +92,7 @@ function NuevaReceta() {
   n = floor(random(nMin, nMax + 1));
   k = floor(random(1, n));                 // 1 a n - 1
   SECUENCIAEUCLIDES = Euclides(k, n);
-  colorActual = -1;                        // el primer 1 lo lleva a 0
+  colorActual = 0 ;                   
 }
 
 function Dibujar(secuencia) {
@@ -108,7 +107,7 @@ function Dibujar(secuencia) {
   text(`(${k}, ${n})`, MARGEN, MARGEN + ALTO + MARGEN);
 }
 
-// pasar de 1000101000 a 1000 => color 1, 10 => color 2 ...
+// pasa de 1000101000 a 1000 => color 1, 10 => color 2 ...
 function Bucle() {
   Indice = 0;
   while (Indice < nHilos) {
