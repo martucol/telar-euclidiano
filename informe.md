@@ -17,7 +17,7 @@ Las secuencias euclidianas reparten k pulsos en n pasos de la forma más pareja 
 Para pasar de la secuencia euclidiana al color, el sistema genera una secuencia E(k,n) de unos y ceros y, por cada paso, asigna un color a cada "*hilo*" (fila/columna de píxeles) uno por uno dentro de un bucle. Cada vez que aparece un 1, se le asigna al hilo un nuevo color, y los 0 que vienen después mantienen el color de ese 1. La secuencia de unos y ceros se transforma en una secuencia de franjas de colores:
 
 ```
-E(3,8) = 10010010 → 100 color A · 100 color B · 10 color A 
+E(3,8) = 10010010 → 100 color A , 100 color B , 10 color A 
 ```
 
 El desarrollo se hizo en etapas. La primera versión es unidimensional, con *hilos* en una sola dirección que forman franjas de color. La segunda versión es bidimensional, y la misma secuencia se aplica a la *urdimbre*, que son los *hilos* verticales o columnas, y a la *trama*, que son los horizontales o filas. Los *hilos* se entrelazan en *tafetán* y en cada cruce se alterna qué *hilo* queda adelante.
@@ -32,7 +32,14 @@ fila3    T    U    T    U
 
 El patrón se muestra animado, como en un telar: primero crecen las urdimbres, una por una, de arriba hacia abajo, y después las tramas, de derecha a izquierda, cruzándose en tafetán. Cada *hilo* tarda un tiempo fijo, definido en la configuración.
 
-En la última versión, se suma además un acento a la secuencia, que se calcula aleatoriamente entre 1 y k-1, generando una sub-secuencia euclidiana de E(a,k). Esta es la versión descripta en los diagramas y pseudocódigo en los anexos, que funciona en loop continuo a modo de los antiguos "protectores de pantalla" ([ver online](https://martucol.github.io/telar-euclidiano/auto)).
+En la última versión, se suma además un acento a la secuencia, que se calcula aleatoriamente entre 1 y k-1, generando una sub-secuencia euclidiana de E(a,k). 
+
+```
+E(3,8) = 10010010 
+acento E(1,3) = 100 → 20010010 → 200 color C (acento) , 100 color A , 10 color B
+```
+
+Esta es la versión descripta en los diagramas y pseudocódigo en los anexos, que funciona en loop continuo a modo de los antiguos "protectores de pantalla" ([ver online](https://martucol.github.io/telar-euclidiano/auto)).
 
 A partir de este algoritmo se creó la herramienta online, que suma parámetros ajustables, la opción de usar acentos o no, y la de que urdimbre y trama tengan la misma secuencia o secuencias distintas. Tiene un modo determinista, donde el usuario define cada parámetro, y uno exploratorio, donde elige algunos valores iniciales y el sistema genera patrones aleatorios a partir de ellos. Cada patrón se puede exportar como imagen del canvas o como tile, el módulo mínimo que se repite sin cortes, para usarlo en otros soportes, como fondos, impresiones o mosaicos.
 

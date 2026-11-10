@@ -19,6 +19,7 @@
 <script>
 // =====================================================
 // TELAR EUCLIDIANO (p5.js)
+// Bidimensional, interacalado alternadamente, con acentos.
 // =====================================================
 
 /*
@@ -29,102 +30,87 @@ Combinaciones que me gustaron:
 */
 
 const CONFIG = {
-  grosor: 16,           // px por "hilo" · la cantidad de "hilos" horizontales y verticales se calcula a partir del alto / ancho de pantalla
-  nColores: 3,          // se eligen los colores aleatoriamente a partir de la paleta
-  nMin: 2,              // minimo valor para n
+  grosor: 16,           // px por "hilo". la cantidad de "hilos" horizontales y verticales se calcula a partir del alto / ancho de pantalla
+  nColores: 3,          // se eligen aleatoriamente de la paleta, 1 para el acento, el resto para la base
+  nMin: 3,              // minimo valor para n, como minimo 3 porque k tiene que ser al menos 2 para que haya acento
   nMax: 29,             // maximo valor para n
-  modo: 'igual',        // define si urdimbre y trama tienen el mismo patron :  'igual' | 'distinto' | 'aleatorio'
-  acento: true,         // la base es de 2 colores, y calcula el acento aleatoriamente entre 1 y k - 1
-  tiempoHilo: 50,       // ms que tarda cada hilo en crecer
+  tiempoHilo: 50,       // ms que tarda cada hilo en dibujarse
   espera: 3000,         // ms de pausa entre un patrón y el siguiente
 };
 
 const PALETA = ['#b1d1f5', '#efa5e4', '#d8f707', '#8a5a2b'];
 const FONDO = '#efe6d2';
 
-let colores, urdimbre, trama, comparten;
+let colores, patron, urdimbre, trama;   // urdimbre y trama: colores de cada hilo, mismo patrón
 let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'espera'
 
 // ---------- EUCLIDES ----------
 // 
 // fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
 // reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
-function Euclides(k, n) {
+function euclides(k, n) {
   const secuencia = [];
   for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
   return secuencia;
 }
 
-// ----------GENERADOR DE PATRÓN ----------
-function Patron() {
-  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
-  const k = floor(random(1, n));            // 1 a n - 1
-  const a = CONFIG.acento && k > 1 ? floor(random(1, k)) : 0;   // 1 a k - 1, sin acento si k = 1
-  return { k, n, a, secuencia: Acento(Euclides(k, n), k, a) };
-}
-
-// 1000101000 → 1000 color 1 · 10 color 2 ...
-function ColoresHilos(p, total) {
-  if (p.a) return ColoresHilosAcento(p, total);
-  const hilos = [];
-  let colorActual = -1;                     // el primer 1 lo lleva a 0
-  let Indice = 0;
-  while (Indice < total) {
-    if (p.secuencia[Indice % p.n] === 1) colorActual = (colorActual + 1) % CONFIG.nColores;
-    hilos[Indice] = colores[colorActual];
-    Indice++;
-  }
-  return hilos;
-}
-
 // ---------- ACENTO ----------
 // principal E(k,n), acento E(a,k): el acento se reparte sobre los k unos
-function Acento(secuencia, k, a) {
-  if (!a) return secuencia;
-  const acento = Euclides(a, k);
+// los unos que caen en un 1 del acento pasan a 2 · E(3,8) con E(1,3) = 20010010
+function acento(secuencia, k, a) {
+  const acento = euclides(a, k);
   let uno = 0;                              // cuántos 1 van recorridos
   return secuencia.map(x => x === 1 ? (acento[uno++] ? 2 : 1) : 0);
 }
 
-// cada 1 alterna entre los 2 colores base · cada 2 pinta el color acento
-// los 0 mantienen el último color
-function ColoresHilosAcento(p, total) {
+// ----------GENERADOR DE PATRÓN ----------
+function patron() {
+  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
+  const k = floor(random(2, n));            // 2 a n - 1
+  const a = floor(random(1, k));            // 1 a k - 1
+  return { k, n, a, secuencia: acento(euclides(k, n), k, a) };
+}
+
+// ---------- COLORES ----------
+// 1 → siguiente color base · 2 → color acento · 0 → mantiene el último color
+// con 3 colores: 20010010 → 200 acento · 100 base 1 · 10 base 2
+function coloresHilos(p, total) {
+  const nBase = CONFIG.nColores - 1;        // colores base: todos menos el último
+  const acento = CONFIG.nColores - 1;       // color acento: el último
   const hilos = [];
+  let colorBase = -1;                       // el primer 1 lo lleva a 0
   let colorActual = -1;
-  let colorBase = -1;
   let Indice = 0;
   while (Indice < total) {
-    const x = p.secuencia[Indice % p.n];
-    if (x === 1) colorActual = colorBase = (colorBase + 1) % 2;
-    if (x === 2) colorActual = 2;
+    const paso = p.secuencia[Indice % p.n];
+    if (paso === 1) {
+      colorBase = (colorBase + 1) % nBase;
+      colorActual = colorBase;
+    }
+    if (paso === 2) colorActual = acento;
     hilos[Indice] = colores[colorActual];
     Indice++;
   }
   return hilos;
 }
 
-function NuevoPatron() {
-  colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  const pU = Patron();
-  comparten = CONFIG.modo === 'igual' || (CONFIG.modo === 'aleatorio' && random() < 0.5);
-  const pT = comparten ? pU : Patron();
-  Tejer(pU, pT);
-}
-
+// urdimbre y trama usan el mismo patrón
 // el patrón se repite hasta cubrir la pantalla
-function Tejer(pU, pT) {
-  urdimbre = { ...pU, hilos: ColoresHilos(pU, ceil(width / CONFIG.grosor)) };
-  trama = { ...pT, hilos: ColoresHilos(pT, ceil(height / CONFIG.grosor)) };
+function nuevoPatron() {
+  colores = shuffle(PALETA).slice(0, CONFIG.nColores);
+  patron = patron();
+  urdimbre = coloresHilos(patron, ceil(width / CONFIG.grosor));
+  trama = coloresHilos(patron, ceil(height / CONFIG.grosor));
   fase = 'urdimbre';
   hilo = 0;
   t0 = millis();
 }
 
 // patrón terminado → consola
-function Registrar() {
-  const ejes = S => `E(${S.k},${S.n})` + (S.a ? ` E(${S.a},${S.k})` : '') + ` ${S.secuencia.join('')}`;
+function registrar() {
+  const p = patron;
   console.log(
-    `urdimbre ${ejes(urdimbre)}` + (comparten ? '' : ` · trama ${ejes(trama)}`) +
+    `E(${p.k},${p.n}) E(${p.a},${p.k}) ${p.secuencia.join('')}` +
     ` · colores ${colores.join(' ')}`
   );
 }
@@ -134,20 +120,20 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
   background(FONDO);
-  NuevoPatron();
+  nuevoPatron();
 }
 
 // al cambiar el tamaño se limpia y arranca de nuevo
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   background(FONDO);
-  NuevoPatron();
+  nuevoPatron();
 }
 
 // sin background(): cada frame pinta solo el hilo que está creciendo
 function draw() {
   if (fase === 'espera') {
-    if (millis() - t0 >= CONFIG.espera) NuevoPatron();
+    if (millis() - t0 >= CONFIG.espera) nuevoPatron();
     return;
   }
 
@@ -156,7 +142,7 @@ function draw() {
 
   // URDIMBRES: crecen de arriba hacia abajo
   if (fase === 'urdimbre') {
-    fill(urdimbre.hilos[hilo]);
+    fill(urdimbre[hilo]);
     rect(hilo * g, 0, g, height * progreso);
   }
 
@@ -167,8 +153,8 @@ function draw() {
   if (progreso >= 1) {
     hilo++;
     t0 = millis();
-    if (fase === 'urdimbre' && hilo >= urdimbre.hilos.length) { fase = 'trama'; hilo = 0; }
-    else if (fase === 'trama' && hilo >= trama.hilos.length) { fase = 'espera'; Registrar(); }
+    if (fase === 'urdimbre' && hilo >= urdimbre.length) { fase = 'trama'; hilo = 0; }
+    else if (fase === 'trama' && hilo >= trama.length) { fase = 'espera'; Registrar(); }
   }
 }
 
@@ -176,8 +162,8 @@ function draw() {
 function dibujarTrama(j, progreso) {
   const g = CONFIG.grosor;
   const x0 = width * (1 - progreso);        // borde izquierdo de lo que ya entró
-  fill(trama.hilos[j]);
-  for (let i = 0; i < urdimbre.hilos.length; i++) {
+  fill(trama[j]);
+  for (let i = 0; i < urdimbre.length; i++) {
     if ((j + i) % 2 === 0) continue;        // urdimbre adelante
     const a = max(i * g, x0);
     const b = (i + 1) * g;
@@ -195,22 +181,19 @@ function descargar(canvasEl, nombre) {
   link.remove();
 }
 
-// k,n en el nombre: un solo par si urdimbre y trama son iguales
-// con acento se agrega a: 5,8,a2
+// k,n,a en el nombre: 5,8,a2
 function nombreArchivo(extra) {
-  const ejes = S => `${S.k},${S.n}` + (S.a ? `,a${S.a}` : '');
-  const u = ejes(urdimbre);
-  const t = ejes(trama);
-  return `telar-euclidiano${extra}-` + (u === t ? u : `u${u}-t${t}`);
+  const p = patron;
+  return `telar-euclidiano${extra}-${p.k},${p.n},a${p.a}`;
 }
 
 // guarda lo que está en pantalla tal cual
-function GuardarCompleto() {
+function guardarCompleto() {
   descargar(drawingContext.canvas, nombreArchivo(''));
 }
 
 function keyPressed() {
-  if (key.toLowerCase() === 'g') GuardarCompleto();
+  if (key.toLowerCase() === 'g') guardarCompleto();
 }
 </script>
 </body>
