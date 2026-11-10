@@ -1,6 +1,6 @@
 # **Telar euclidiano**
 
-Laboratorio de Creación Algorítmica - UNTREF 
+Laboratorio de Creación Algorítmica 2026 - UNTREF 
 
 *María Martina Colmenero*
 
