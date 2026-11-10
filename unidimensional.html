@@ -23,7 +23,7 @@ Algoritmo:
 
 - Euclides (k, n) :
 		Devuelve un array de n posiciones, con la distribucion euclidiana de 1s y 0s para k cantidad de 1s
-- NuevaReceta () :
+- NuevoPatron () :
 		COLORES[] = elegir aleatoriamente nColores cant de items dentro de la lista PALETA
 		n = elegir aleatoriamente el valor de n entre nMin y nMax
 		k = elegir aleatoriamente el valor de k entre 1 y ( n - 1  )
@@ -87,7 +87,7 @@ function Euclides(k, n) {
   return secuencia;
 }
 
-function NuevaReceta() {
+function NuevoPatron() {
   COLORES = shuffle(PALETA).slice(0, nColores);
   n = floor(random(nMin, nMax + 1));
   k = floor(random(1, n));                 // 1 a n - 1
@@ -123,7 +123,7 @@ function setup() {
   createCanvas(nHilos * GROSOR + MARGEN * 2, ALTO + MARGEN * 3);
   textFont('monospace');
   noLoop();
-  NuevaReceta();
+  NuevoPatron();
   Bucle();
 }
 </script>

@@ -18,7 +18,7 @@
 // urdimbre y trama usan la misma secuencia
 // animación: urdimbres crecen de arriba hacia abajo,
 // después tramas crecen de derecha a izquierda en tafetán
-// Teclas: R nueva receta · G guardar png
+// Teclas: R nuevo patrón · G guardar png
 // =====================================================
 
 const CONFIG = {
@@ -48,7 +48,7 @@ function Euclides(k, n) {
   return secuencia;
 }
 
-// ---------- RECETA ----------
+// ---------- PATRÓN ----------
 function Patron() {
   const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
   const k = floor(random(1, n));            // 1 a n - 1
@@ -68,7 +68,7 @@ function ColoresHilos(p, total) {
   return hilos;
 }
 
-function NuevaReceta() {
+function NuevoPatron() {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
   const p = Patron();
   patron = { ...p, hilos: ColoresHilos(p, CONFIG.nHilos) };
@@ -86,7 +86,7 @@ function setup() {
   createCanvas(ANCHO + 2 * CONFIG.margen, ALTO + 2 * CONFIG.margen + 30);
   textFont('monospace');
   noStroke();
-  NuevaReceta();
+  NuevoPatron();
 }
 
 function draw() {
@@ -164,7 +164,7 @@ function descargar(canvasEl, nombre) {
 
 function keyPressed() {
   const k = key.toLowerCase();
-  if (k === 'r') NuevaReceta();
+  if (k === 'r') NuevoPatron();
   if (k === 'g') descargar(drawingContext.canvas, 'telar-euclidiano');
 }
 </script>

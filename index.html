@@ -142,7 +142,7 @@
 // urdimbre y trama con patrón propio, compartido o al azar
 // animación: urdimbres crecen de arriba hacia abajo,
 // después tramas crecen de derecha a izquierda en tafetán
-// Teclas: R nueva receta · G guardar png · T guardar tile repetible
+// Teclas: R nuevo patrón · G guardar png · T guardar tile repetible
 // =====================================================
 
 const CONFIG = {
@@ -189,7 +189,7 @@ function periodo(S) {
   return S.n * CONFIG.nColores / mcd(S.k, CONFIG.nColores);
 }
 
-// ---------- RECETA ----------
+// ---------- PATRÓN ----------
 function Patron() {
   const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
   const k = floor(random(1, n));            // 1 a n - 1
@@ -240,7 +240,7 @@ function ColoresHilosAcento(p, total) {
   return hilos;
 }
 
-function NuevaReceta() {
+function NuevoPatron() {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
   const pU = Patron();
   comparten = CONFIG.modo === 'igual' || (CONFIG.modo === 'aleatorio' && random() < 0.5);
@@ -249,7 +249,7 @@ function NuevaReceta() {
 }
 
 // k y n dados por el usuario, mismo patrón en urdimbre y trama
-function RecetaExacta(k, n, a) {
+function PatronExacto(k, n, a) {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
   const p = { k, n, a, secuencia: Acento(Euclides(k, n), k, a) };
   comparten = true;
@@ -277,10 +277,10 @@ function setup() {
   createCanvas(...tamañoLienzo()).parent('lienzo');
   textFont('monospace');
   noStroke();
-  NuevaReceta();
+  NuevoPatron();
 }
 
-// misma receta, recalcula cuántos hilos entran y vuelve a tejer
+// mismo patrón, recalcula cuántos hilos entran y vuelve a tejer
 function windowResized() {
   resizeCanvas(...tamañoLienzo());
   Tejer(urdimbre, trama);
@@ -424,7 +424,7 @@ function GenerarAleatorio() {
   CONFIG.nMin = max(2, valor('aMin') || 2);
   CONFIG.nMax = max(CONFIG.nMin, valor('aMax') || CONFIG.nMin);
   CONFIG.modo = 'igual' //document.getElementById('aModo').value;
-  NuevaReceta();
+  NuevoPatron();
 }
 
 function GenerarExacto() {
@@ -437,7 +437,7 @@ function GenerarExacto() {
   document.getElementById('eA').value = a;
   BloquearColores();
   CONFIG.nColores = a ? 3 : constrain(valor('eColores') || 2, 2, PALETA.length);
-  RecetaExacta(k, n, a);
+  PatronExacto(k, n, a);
 }
 
 // activa un botón del toggle y muestra solo la sección de ese modo
@@ -457,7 +457,7 @@ document.querySelectorAll('#modo button').forEach(b => b.onclick = () => Mostrar
 document.getElementById('aAcento').onchange = BloquearColores;
 document.getElementById('eA').oninput = BloquearColores;
 BloquearColores();
-// cambiar el grosor vuelve a tejer la misma receta
+// cambiar el grosor vuelve a tejer el mismo patrón
 document.getElementById('grosor').onchange = () => { LeerGrosor(); Tejer(urdimbre, trama); };
 document.getElementById('bAleatorio').onclick = GenerarAleatorio;
 document.getElementById('bExacto').onclick = GenerarExacto;

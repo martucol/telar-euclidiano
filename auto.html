@@ -36,7 +36,7 @@ const CONFIG = {
   modo: 'igual',        // define si urdimbre y trama tienen el mismo patron :  'igual' | 'distinto' | 'aleatorio'
   acento: true,         // la base es de 2 colores, y calcula el acento aleatoriamente entre 1 y k - 1
   tiempoHilo: 50,       // ms que tarda cada hilo en crecer
-  espera: 3000,         // ms de pausa entre una receta y la siguiente
+  espera: 3000,         // ms de pausa entre un patrón y el siguiente
 };
 
 const PALETA = ['#b1d1f5', '#efa5e4', '#d8f707', '#8a5a2b'];
@@ -55,7 +55,7 @@ function Euclides(k, n) {
   return secuencia;
 }
 
-// ----------GENERADOR DE RECETA ----------
+// ----------GENERADOR DE PATRÓN ----------
 function Patron() {
   const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
   const k = floor(random(1, n));            // 1 a n - 1
@@ -103,7 +103,7 @@ function ColoresHilosAcento(p, total) {
   return hilos;
 }
 
-function NuevaReceta() {
+function NuevoPatron() {
   colores = shuffle(PALETA).slice(0, CONFIG.nColores);
   const pU = Patron();
   comparten = CONFIG.modo === 'igual' || (CONFIG.modo === 'aleatorio' && random() < 0.5);
@@ -120,7 +120,7 @@ function Tejer(pU, pT) {
   t0 = millis();
 }
 
-// receta terminada → consola
+// patrón terminado → consola
 function Registrar() {
   const ejes = S => `E(${S.k},${S.n})` + (S.a ? ` E(${S.a},${S.k})` : '') + ` ${S.secuencia.join('')}`;
   console.log(
@@ -134,20 +134,20 @@ function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
   background(FONDO);
-  NuevaReceta();
+  NuevoPatron();
 }
 
 // al cambiar el tamaño se limpia y arranca de nuevo
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   background(FONDO);
-  NuevaReceta();
+  NuevoPatron();
 }
 
 // sin background(): cada frame pinta solo el hilo que está creciendo
 function draw() {
   if (fase === 'espera') {
-    if (millis() - t0 >= CONFIG.espera) NuevaReceta();
+    if (millis() - t0 >= CONFIG.espera) NuevoPatron();
     return;
   }
 
