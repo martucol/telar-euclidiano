@@ -1,10 +1,12 @@
 
 
-## **Código**
+## **Código y links**
 
-- [Algoritmo generativo, protector de pantallas](https://martucol.github.io/telar-euclidiano/auto)
-- [Repositorio completo](https://github.com/martucol/telar-euclidiano)
 - [Herramienta online](https://martucol.github.io/telar-euclidiano/)
+- [Algoritmo generativo, protector de pantallas](https://martucol.github.io/telar-euclidiano/auto)
+- [Link de descarga en ZIP](https://github.com/martucol/telar-euclidiano/archive/refs/heads/main.zip)
+- [Repositorio completo](https://github.com/martucol/telar-euclidiano)
+
 
 
 ---
