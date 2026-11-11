@@ -171,9 +171,9 @@ function draw() {
     // TRAMAS: crecen de izquierda a derecha, tafetán
     // solo se pinta en los cruces donde la trama va adelante de la urdimbre
     // cada cruce es un cuadrado de grosorHilo px de lado
-    const cantHilosDibujados = floor(cantHilosUrdimbre * porcentajeHiloDibujado);
+    const cantCrucesADibujar = floor(cantHilosUrdimbre * porcentajeHiloDibujado);
     fill(trama[hiloActual]);
-    for (let i = 0; i < cantHilosDibujados; i++) {
+    for (let i = 0; i < cantCrucesADibujar; i++) {
       if ((hiloActual + i) % 2 === 0) {
         // no dibujar la trama, la urdimbre va adelante
       } else {
