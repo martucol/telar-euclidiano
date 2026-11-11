@@ -41,7 +41,7 @@ acento E(1,3) = 100 → 20010010 → 200 color C (acento) , 100 color A , 10 col
 
 Esta es la versión descripta en los diagramas y pseudocódigo en los anexos, que funciona en loop continuo a modo de los antiguos "protectores de pantalla" ([ver online](https://martucol.github.io/telar-euclidiano/auto)).
 
-A partir de este algoritmo se creó la herramienta online, que suma parámetros ajustables, la opción de usar acentos o no, y la de que urdimbre y trama tengan la misma secuencia o secuencias distintas. Tiene un modo determinista, donde el usuario define cada parámetro, y uno exploratorio, donde elige algunos valores iniciales y el sistema genera patrones aleatorios a partir de ellos. Cada patrón se puede exportar como imagen del canvas o como tile, el módulo mínimo que se repite sin cortes, para usarlo en otros soportes, como fondos, impresiones o mosaicos.
+A partir de este algoritmo se creó la herramienta online, que suma parámetros ajustables y la opción de usar acentos o no. Tiene un modo determinista, donde el usuario define cada parámetro, y uno exploratorio, donde elige algunos valores iniciales y el sistema genera patrones aleatorios a partir de ellos. Cada patrón se puede exportar como imagen del canvas o como tile, el módulo mínimo que se repite sin cortes, para usarlo en otros soportes, como fondos, impresiones o mosaicos.
 
 
 ## **Antecedentes**
