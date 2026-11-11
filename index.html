@@ -39,7 +39,44 @@
     }
     #lienzo { flex: 1; overflow: hidden; }
 
-    h1 { font-size: 13px; font-weight: normal; margin: 0 0 30px; text-transform: uppercase; }
+    h1 {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+      font-weight: normal;
+      margin: 0 0 30px;
+      text-transform: uppercase;
+    }
+    /* botón i: círculo con outline, relleno cuando la info está abierta */
+    #bInfo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 20px;
+      height: 20px;
+      margin: 0;
+      padding: 0;
+      border-radius: 50%;
+      color: inherit;
+      background: transparent;
+      text-transform: none;
+    }
+    #panel.info #bInfo {
+      color: var(--background);
+      background: var(--foreground);
+    }
+    /* el panel muestra los controles o la info, nunca los dos */
+    #controles {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #info { display: none; line-height: 1.5; }
+    #info p { margin: 0 0 14px; }
+    #info a { color: inherit; }
+    #panel.info #controles { display: none; }
+    #panel.info #info { display: block; }
     h2 { font-size: 11px; font-weight: normal; margin: 0 0 12px; text-transform: uppercase; }
     section { margin-bottom: 34px; }
 
@@ -107,8 +144,21 @@
 <body>
 
 <aside id="panel">
-  <h1>Telar euclidiano</h1>
+  <h1>Telar euclidiano <button id="bInfo" aria-label="qué es esto">i</button></h1>
 
+  <div id="info">
+    <p>Telar euclidiano es un instrumento digital que convierte ritmos en tejidos de píxeles.</p>
+    <p>Trabaja con dos ideas. Las secuencias euclidianas, que reparten <strong>k</strong> pulsos en <strong>n</strong> pasos de la forma más pareja posible. Y el tafetán, tejido donde cada hilo pasa una vez por arriba y una vez por abajo de los hilos que cruza.</p>
+    <p>Cada <strong>k</strong> de la secuencia le da un color nuevo al hilo, y los hilos que vienen después mantienen ese color. Con acento, una segunda secuencia <strong>E(a,k)</strong> marca algunos de esos k con un color propio.</p>
+    <p>Los hilos se tejen como en un telar: primero las urdimbres, de arriba hacia abajo, y después las tramas, de izquierda a derecha.</p>
+    <p>En aleatorio se eligen los rangos y el sistema sortea el resto. En custom se define <strong>k</strong>, <strong>n</strong> y <strong>a</strong>.</p>
+    <p>La secuencia final queda escrita abajo, y cada patrón se puede guardar como imagen o como mosaico.</p>
+    <p>hecho por <a href="https://mariamartina.com" target="_blank">maria martina</a><br/>Laboratorio de Creación Algoritmica 2026 · UNTREF<br/><br/>
+      <a href="https://martucol.github.io/telar-euclidiano/auto">protector de pantalla</a> ·
+      <a href="https://github.com/martucol/telar-euclidiano">código</a></p>
+  </div>
+
+  <div id="controles">
   <section>
     <!-- paleta: cerrada muestra los cuadraditos, abierta la lista de hex (máximo 6, vacío = no se usa) -->
     <details id="paleta">
@@ -150,6 +200,7 @@
     <button id="bCompleto">Guardar PNG (g)</button>
     <button id="bTile">Guardar tile (t)</button>
   </section>
+  </div>
 </aside>
 
 <main id="lienzo"></main>
@@ -485,6 +536,8 @@ document.querySelectorAll('#paleta input').forEach((input, i) => {
 });
 leerPaleta();
 document.querySelectorAll('#modo button').forEach(b => b.onclick = () => mostrarSeccion(b.dataset.modo));
+// botón i: alterna entre los controles y el texto que explica la herramienta
+document.getElementById('bInfo').onclick = () => document.getElementById('panel').classList.toggle('info');
 // cambiar el grosor vuelve a tejer el mismo patrón
 document.getElementById('grosor').onchange = () => { leerGrosor(); background(CONFIG.colorFondo); tejer(); };
 document.getElementById('bAleatorio').onclick = generarAleatorio;
