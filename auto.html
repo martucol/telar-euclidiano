@@ -29,140 +29,172 @@ Combinaciones que me gustaron:
 - urdimbre E(1,6) 100000 · colores #b1d1f5 #d8f707 #8a5a2b -> bonita y simple
 */
 
+// ---------- PARÁMETROS INICIALES ----------
 const CONFIG = {
-  grosor: 16,           // px por "hilo". la cantidad de "hilos" horizontales y verticales se calcula a partir del alto / ancho de pantalla
+  grosorHilo: 16,       // px por "hilo". la cantidad de "hilos" horizontales y verticales se calcula a partir del alto / ancho de pantalla
   nColores: 3,          // se eligen aleatoriamente de la paleta, 1 para el acento, el resto para la base
   nMin: 3,              // minimo valor para n, como minimo 3 porque k tiene que ser al menos 2 para que haya acento
   nMax: 29,             // maximo valor para n
   tiempoHilo: 50,       // ms que tarda cada hilo en dibujarse
-  espera: 3000,         // ms de pausa entre un patrón y el siguiente
+  tiempoEspera: 3000,   // ms de pausa entre un patrón y el siguiente
+  paletaColores: ['#b1d1f5', '#efa5e4', '#d8f707', '#8a5a2b'],
+  colorFondo: '#efe6d2',
 };
 
-const PALETA = ['#b1d1f5', '#efa5e4', '#d8f707', '#8a5a2b'];
-const FONDO = '#efe6d2';
+// ---------- VARIABLES ----------
+let cantHilosUrdimbre;  // anchoPantalla / grosorHilo, redondeado hacia arriba
+let cantHilosTrama;     // altoPantalla / grosorHilo, redondeado hacia arriba
+let coloresBase = [];   // los colores base elegidos de la paleta para este patrón
+let colorAcento;        // color de acento elegido de la paleta para este patron
+let n;                  // cantidad de pasos de la secuencia, elegido aleatoriamente entre nMin y nMax
+let k;                  // cantidad de 1s repartidos en los n pasos, elegido aleatoriamente entre 2 y n - 1
+let a;                  // cantidad de acentos repartidos sobre los k unos, elegido aleatoriamente entre 1 y k - 1
+let secuencia = [];     // una vuelta del patrón, n pasos con 0, 1 (k) y 2 (acento). ej: E(3,8) con E(1,3) = 20010010
+let urdimbre = [];      // secuencia de color de cada hilo vertical, de izquierda a derecha, de cantHilosUrdimbre posiciones
+let trama = [];         // secuencia de color de cada hilo horizontal, de arriba hacia abajo, de cantHilosTrama posiciones
+let fase;               // en qué parte de la animación de tejido estamos: 'urdimbre' | 'trama' | 'espera'
+let hiloActual;         // índice del hilo que se está dibujando ahora en la fase actual
+let t0;                 // momento en que arrancó el hilo actual (o la espera), para calcular porcentajeHiloDibujado
 
-let colores, patron, urdimbre, trama;   // urdimbre y trama: colores de cada hilo, mismo patrón
-let fase, hilo, t0;   // fase: 'urdimbre' | 'trama' | 'espera'
-
-// ---------- EUCLIDES ----------
-// 
-// fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
-// reparte k unos en n pasos lo más parejo posible · E(3,8) = 10010010
-function euclides(k, n) {
-  const secuencia = [];
-  for (let i = 0; i < n; i++) secuencia.push((i * k) % n < k ? 1 : 0);
-  return secuencia;
-}
-
-// ---------- ACENTO ----------
-// principal E(k,n), acento E(a,k): el acento se reparte sobre los k unos
-// los unos que caen en un 1 del acento pasan a 2 · E(3,8) con E(1,3) = 20010010
-function acento(secuencia, k, a) {
-  const acento = euclides(a, k);
-  let uno = 0;                              // cuántos 1 van recorridos
-  return secuencia.map(x => x === 1 ? (acento[uno++] ? 2 : 1) : 0);
-}
-
-// ---------- COLORES ----------
-// 1 → siguiente color base · 2 → color acento · 0 → mantiene el último color
-// con 3 colores: 20010010 → 200 acento · 100 base 1 · 10 base 2
-function coloresHilos(p, total) {
-  const nBase = CONFIG.nColores - 1;        // colores base: todos menos el último
-  const acento = CONFIG.nColores - 1;       // color acento: el último
-  const hilos = [];
-  let colorBase = -1;                       // el primer 1 lo lleva a 0
-  let colorActual = -1;
-  let indice = 0;
-  while (indice < total) {
-    const paso = p.secuencia[indice % p.n];
-    if (paso === 1) {
-      colorBase = (colorBase + 1) % nBase;
-      colorActual = colorBase;
-    }
-    if (paso === 2) colorActual = acento;
-    hilos[indice] = colores[colorActual];
-    indice++;
-  }
-  return hilos;
-}
-
-// urdimbre y trama usan el mismo patrón
-// el patrón se repite hasta cubrir la pantalla
-function nuevoPatron() {
-  colores = shuffle(PALETA).slice(0, CONFIG.nColores);
-  const n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));
-  const k = floor(random(2, n));            // 2 a n - 1
-  const a = floor(random(1, k));            // 1 a k - 1
-  patron = { k, n, a, secuencia: acento(euclides(k, n), k, a) };
-  urdimbre = coloresHilos(patron, ceil(width / CONFIG.grosor));
-  trama = coloresHilos(patron, ceil(height / CONFIG.grosor));
+// ---------- ALGORITMO ----------
+function inicializarPatron() {
+  const colores = shuffle(CONFIG.paletaColores).slice(0, CONFIG.nColores);
+  colorAcento = colores[0];
+  coloresBase = colores.slice(1);
+  n = floor(random(CONFIG.nMin, CONFIG.nMax + 1));  // nMin a nMax
+  k = floor(random(2, n));                          // 2 a n - 1
+  a = floor(random(1, k));                          // 1 a k - 1
+  const secuenciaInicial = secuenciaEuclides(k, n);
+  secuencia = agregarAcento(secuenciaInicial, k, a);
+  urdimbre = calcularSecuenciaColores(cantHilosUrdimbre);
+  trama = calcularSecuenciaColores(cantHilosTrama);
   fase = 'urdimbre';
-  hilo = 0;
+  hiloActual = 0;
   t0 = millis();
 }
 
-// patrón terminado → consola
+// fórmula modular: en el paso i va un 1 si (i * k) % n < k, si no un 0
+// E(3,8) = 10010010
+function secuenciaEuclides(k, n) {
+  const resultado = [];
+  for (let i = 0; i < n; i++) resultado.push((i * k) % n < k ? 1 : 0);
+  return resultado;
+}
+
+// secuencia principal E(k,n), secuencia acento E(a,k): el acento se reparte sobre los k unos
+function agregarAcento(secuenciaPrincipal, k, a) {
+  const secuenciaAcento = secuenciaEuclides(a, k);
+  let indiceK = 0;                          // cuántos 1 de la secuencia principal van recorridos
+  for (let i = 0; i < secuenciaPrincipal.length; i++) {
+    if (secuenciaPrincipal[i] === 1) {
+      if (secuenciaAcento[indiceK] === 1) secuenciaPrincipal[i] = 2;
+      indiceK++;
+    }
+  }
+  return secuenciaPrincipal;
+}
+
+// 1 → siguiente color base · 2 → color acento · 0 → mantiene el color anterior
+function calcularSecuenciaColores(cantTotalPasos) {
+  const secuenciaColores = [];
+  let indiceColorBase = 0;                  // posición dentro de coloresBase
+  let colorActual;                          // el color que se le asigna a cada posicion
+  let indice = 0;
+  while (indice < cantTotalPasos) {
+    const paso = secuencia[indice % n];
+    if (paso === 1) {
+      indiceColorBase = (indiceColorBase + 1) % coloresBase.length;
+      colorActual = coloresBase[indiceColorBase];
+    }
+    if (paso === 2) {
+      colorActual = colorAcento;
+    }
+    secuenciaColores[indice] = colorActual;
+    indice++;
+  }
+  return secuenciaColores;
+}
+
+// logea el patrón terminado a la consola
 function registrar() {
-  const p = patron;
   console.log(
-    `E(${p.k},${p.n}) E(${p.a},${p.k}) ${p.secuencia.join('')}` +
-    ` · colores ${colores.join(' ')}`
+    `E(${k},${n}) E(${a},${k}) ${secuencia.join('')}` +
+    ` · acento ${colorAcento} · base ${coloresBase.join(' ')}`
   );
 }
 
-// ---------- p5 ----------
+// ---------- INICIO ----------
 function setup() {
   createCanvas(windowWidth, windowHeight);
   noStroke();
-  background(FONDO);
-  nuevoPatron();
+  background(CONFIG.colorFondo);            // sucede una unica vez, al iniciar
+  calcularCantHilos();
+  inicializarPatron();
 }
 
 // al cambiar el tamaño se limpia y arranca de nuevo
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  background(FONDO);
-  nuevoPatron();
+  background(CONFIG.colorFondo);
+  calcularCantHilos();
+  inicializarPatron();
 }
 
+function calcularCantHilos() {
+  cantHilosUrdimbre = ceil(width / CONFIG.grosorHilo);
+  cantHilosTrama = ceil(height / CONFIG.grosorHilo);
+}
+
+// ---------- BUCLE (cada frame) ----------
 // sin background(): cada frame pinta solo el hilo que está creciendo
 function draw() {
+  const ahora = millis();
+  const g = CONFIG.grosorHilo;
+
   if (fase === 'espera') {
-    if (millis() - t0 >= CONFIG.espera) nuevoPatron();
-    return;
+    if (ahora - t0 >= CONFIG.tiempoEspera) {
+      inicializarPatron();
+    } else {
+      return;   // no dibujar nada y terminar este frame
+    }
   }
 
-  const g = CONFIG.grosor;
-  const progreso = constrain((millis() - t0) / CONFIG.tiempoHilo, 0, 1);
+  const porcentajeHiloDibujado = min((ahora - t0) / CONFIG.tiempoHilo, 1);
 
-  // URDIMBRES: crecen de arriba hacia abajo
   if (fase === 'urdimbre') {
-    fill(urdimbre[hilo]);
-    rect(hilo * g, 0, g, height * progreso);
+    // URDIMBRES: crecen de arriba (y = 0) hacia abajo
+    fill(urdimbre[hiloActual]);
+    rect(hiloActual * g, 0, g, height * porcentajeHiloDibujado);
   }
 
-  // TRAMAS: crecen de derecha a izquierda, tafetán
-  if (fase === 'trama') dibujarTrama(hilo, progreso);
-
-  // avanzar al siguiente hilo
-  if (progreso >= 1) {
-    hilo++;
-    t0 = millis();
-    if (fase === 'urdimbre' && hilo >= urdimbre.length) { fase = 'trama'; hilo = 0; }
-    else if (fase === 'trama' && hilo >= trama.length) { fase = 'espera'; registrar(); }
+  if (fase === 'trama') {
+    // TRAMAS: crecen de izquierda a derecha, tafetán
+    // solo se pinta en los cruces donde la trama va adelante de la urdimbre
+    // cada cruce es un cuadrado de grosorHilo px de lado
+    const cantHilosDibujados = floor(cantHilosUrdimbre * porcentajeHiloDibujado);
+    fill(trama[hiloActual]);
+    for (let i = 0; i < cantHilosDibujados; i++) {
+      if ((hiloActual + i) % 2 === 0) {
+        // no dibujar la trama, la urdimbre va adelante
+      } else {
+        // dibujar el cruce de la trama sobre la urdimbre
+        rect(i * g, hiloActual * g, g, g);
+      }
+    }
   }
-}
 
-// trama j: solo se pinta en los cruces donde va adelante
-function dibujarTrama(j, progreso) {
-  const g = CONFIG.grosor;
-  const x0 = width * (1 - progreso);        // borde izquierdo de lo que ya entró
-  fill(trama[j]);
-  for (let i = 0; i < urdimbre.length; i++) {
-    if ((j + i) % 2 === 0) continue;        // urdimbre adelante
-    const a = max(i * g, x0);
-    const b = (i + 1) * g;
-    if (b > a) rect(a, j * g, b - a, g);
+  if (porcentajeHiloDibujado === 1) {
+    // si ya se completó este hilo, pasar al siguiente
+    hiloActual++;
+    t0 = ahora;
+    if (fase === 'urdimbre' && hiloActual === cantHilosUrdimbre) {
+      fase = 'trama';
+      hiloActual = 0;
+    }
+    if (fase === 'trama' && hiloActual === cantHilosTrama) {
+      fase = 'espera';
+      registrar();
+    }
   }
 }
 
@@ -178,8 +210,7 @@ function descargar(canvasEl, nombre) {
 
 // k,n,a en el nombre: 5,8,a2
 function nombreArchivo(extra) {
-  const p = patron;
-  return `telar-euclidiano${extra}-${p.k},${p.n},a${p.a}`;
+  return `telar-euclidiano${extra}-${k},${n},a${a}`;
 }
 
 // guarda lo que está en pantalla tal cual

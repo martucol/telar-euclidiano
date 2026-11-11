@@ -30,7 +30,7 @@ fila2    U    T    U    T
 fila3    T    U    T    U
 ```
 
-El patrón se muestra animado, como en un telar: primero crecen las urdimbres, una por una, de arriba hacia abajo, y después las tramas, de derecha a izquierda, cruzándose en tafetán. Cada *hilo* tarda un tiempo fijo, definido en la configuración.
+El patrón se muestra animado, como en un telar: primero crecen las urdimbres, una por una, de arriba hacia abajo, y después las tramas, de izquierda a derecha, cruzándose en tafetán. Cada *hilo* tarda un tiempo fijo, definido en la configuración.
 
 En la última versión, se suma además un acento a la secuencia, que se calcula aleatoriamente entre 1 y k-1, generando una sub-secuencia euclidiana de E(a,k). 
 
