@@ -15,7 +15,6 @@
 
 - Abregú, E. (2025). *Código que suena: Coding Creativo y Pensamiento Sonoro con Pure Data*. Cap. 2, Secuenciación: secuenciador euclidiano y generador de acentos euclidianos. https://ezequielabregu.github.io/code-that-sounds-es/chapters/sequencing.es.html
 - Albers, A. (1965). *On Weaving*. Wesleyan University Press.
-- Alberti, D. J. (2023). *Lliklla*. https://www.diegoalberti.net/artworks/clx82y4jy1aka07lurtr47qun
 - Demaine, E. D., Gómez-Martín, F., Meijer, H., Rappaport, D., Taslakian, P., Toussaint, G. T., Winograd, T. y Wood, D. R. (2009). The distance geometry of music. *Computational Geometry: Theory and Applications*, 42(5). https://erikdemaine.org/papers/DeepRhythms_CGTA/paper.pdf 
 - Toussaint, G. (2005). The Euclidean Algorithm Generates Traditional Musical Rhythms. *Proceedings of BRIDGES: Mathematical Connections in Art, Music and Science*, 47–56. https://cgm.cs.mcgill.ca/~godfried/publications/banff.pdf
 - van de Seyp, V. (2023). *Overshot Pattern Tool*. MIT Media Lab. https://veravandeseyp.com/projects/overshot-pattern-tool/
