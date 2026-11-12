@@ -66,9 +66,8 @@ bucle:
 <body>
 <script>
 // ---------- VARIABLES ----------
-const nHilos = 100;    // cantidad de hilos
-const GROSOR = 16;      // px por hilo
-const ALTO = 100;      // px alto total
+const GROSOR = 24;      // px por hilo
+const ALTO = 200;      // px alto total
 const nColores = 2;    // cant colores que alternan
 const nMin = 5;        // mínimo rango de pasos secuencia
 const nMax = 27;       // máximo rango de pasos secuencia
@@ -76,6 +75,7 @@ const MARGEN = 30;
 const PALETA = ['#cadcff', '#efa5e4', '#d8f707', '#8a5a2b'];
 const FONDO = '#efe6d2';
 const TEXTO = '#585050';
+let nHilos = 27;    // cantidad de hilos, en este caso, para ilustrar, va a ser = a n
 let secuenciaHilos = [];
 let indice = 0;
 
@@ -90,6 +90,7 @@ function euclides(k, n) {
 function nuevoPatron() {
   colores = shuffle(PALETA).slice(0, nColores);
   n = floor(random(nMin, nMax + 1));
+  nHilos = n;
   k = floor(random(1, n));                 // 1 a n - 1
   secuenciaEuclides = euclides(k, n);
   colorActual = 0 ;                   
@@ -100,8 +101,14 @@ function dibujar(secuencia) {
   noStroke();
   for (let i = 0; i < secuencia.length; i++) {
     fill(secuencia[i]);
-    rect(MARGEN + i * GROSOR, MARGEN, GROSOR, ALTO);
+    rect(MARGEN + i * GROSOR + i*2, MARGEN, GROSOR, ALTO);
+    // punto debajo de los pasos que tienen un 1
+    if (secuenciaEuclides[i % n] === 1) {
+      fill(TEXTO);
+      circle(MARGEN + i * GROSOR + i*2 + GROSOR / 2, MARGEN + ALTO + MARGEN / 3, 4);
+    }
   }
+
   fill(TEXTO);
   textSize(11);
   text(`(${k}, ${n})`, MARGEN, MARGEN + ALTO + MARGEN);
